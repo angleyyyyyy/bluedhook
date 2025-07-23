@@ -9,6 +9,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -197,7 +198,6 @@ public class SQLiteManagement extends SQLiteOpenHelper {
             if (cursor != null) {
                 cursor.close();
             }
-            db.close();
         }
         return setting;
     }
@@ -399,6 +399,7 @@ public class SQLiteManagement extends SQLiteOpenHelper {
                     new String[]{uid});
         }
     }
+
     public void updateUserVoiceReminded(String uid, boolean isVoiceReminded) {
         try (SQLiteDatabase db = this.getWritableDatabase()) {
             ContentValues values = new ContentValues();
@@ -410,8 +411,10 @@ public class SQLiteManagement extends SQLiteOpenHelper {
         }
     }
     // 删除用户
+
     /**
      * 删除指定UID的用户
+     *
      * @param uid 要删除的用户UID
      * @return 是否成功删除 (true表示成功删除至少1行，false表示删除失败或用户不存在)
      */
@@ -430,6 +433,7 @@ public class SQLiteManagement extends SQLiteOpenHelper {
             return false;
         }
     }
+
     public void updateUserLive(String uid, long live) {
         try (SQLiteDatabase db = this.getWritableDatabase()) {
             ContentValues values = new ContentValues();

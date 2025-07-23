@@ -8,7 +8,7 @@ android {
     defaultConfig {
         applicationId "com.zjfgh.bluedhook.simple"
         minSdk 26
-        versionCode 101090
+        versionCode 101091
         versionName "1.1.9"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         ndk {
