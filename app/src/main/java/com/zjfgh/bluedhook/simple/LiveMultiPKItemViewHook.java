@@ -80,6 +80,10 @@ public class LiveMultiPKItemViewHook {
                         if (lid.equals(String.valueOf(LiveMsgSendManagerHook.getInstance().getMainLid()))) {
                             //当前lid和主lid相同即表示,列表要重新刷新了
                             cleanUser();
+                            //刷新时 默认选中当前主播
+                            msgSenderAnchor.isChecked = true;
+                            flBackRound.setBackground(modRes.getDrawable(R.drawable.tech_bg_selected, null));
+                            hmSendMsgAnchor.put(msgSenderAnchor.lid, msgSenderAnchor);
                             // 获取当前的LayoutParams
                             LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) flBackRound.getLayoutParams();
                             // 设置外边距（left, top, right, bottom，单位是px）
