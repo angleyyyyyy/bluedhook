@@ -128,11 +128,6 @@ public class ChatHook {
                 super.beforeHookedMethod(param);
                 handleChatMessage(param, "c");
             }
-
-            @Override
-            protected void afterHookedMethod(XC_MethodHook.MethodHookParam param) throws Throwable {
-                super.afterHookedMethod(param);
-            }
         });
         XposedHelpers.findAndHookMethod("com.soft.blued.ui.msg.controller.tools.ChatHelperV4", classLoader, "d", android.content.Context.class, ChattingModel, new XC_MethodHook() {
             @Override
@@ -251,9 +246,9 @@ public class ChatHook {
                 case 25: // 闪照视频
                     convertFlashMessage(msgObj, (short) 5, msgContent, "视频");
                     break;
-                case 55: // 如果已经被撤回，但本地已收到消息，那么处理为闪照
-                    convertFlashMessage(msgObj, (short) 2, msgContent, "视频");
-                    break;
+//                case 55: // 如果已经被撤回，但本地已收到消息，那么处理为闪照普通消息
+//                    convertFlashMessage(msgObj, (short) 1, msgContent, "普通消息");
+//                    break;
             }
         } catch (Throwable e) {
             Log.e("BluedHook", "处理单条消息时出错", e);
