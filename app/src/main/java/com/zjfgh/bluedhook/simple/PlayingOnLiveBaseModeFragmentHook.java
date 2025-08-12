@@ -89,7 +89,7 @@ public class PlayingOnLiveBaseModeFragmentHook {
             @Override
             public void run() {
                 SettingItem settingItem = SQLiteManagement.getInstance().getSettingByFunctionId(SettingsViewCreator.REC_HEW_HORN);
-                if (!settingItem.isSwitchOn()) {
+                if (settingItem != null && !settingItem.isSwitchOn()) {
                     // 停止计时
                     this.cancel();  // 取消当前TimerTask
                     timer.cancel(); // 取消Timer
@@ -126,7 +126,7 @@ public class PlayingOnLiveBaseModeFragmentHook {
                     protected void beforeHookedMethod(MethodHookParam param) {
                         SettingItem settingItem = SQLiteManagement.getInstance()
                                 .getSettingByFunctionId(SettingsViewCreator.PLAYING_ON_LIVE_BASE_MODE_FRAGMENT_HOOK);
-                        if (settingItem.isSwitchOn()) {
+                        if (settingItem != null && settingItem.isSwitchOn()) {
                             int fromPrivilege = XposedHelpers.getIntField(param.thisObject, "fromPrivilege");
                             if (fromPrivilege == 1) {
                                 String fromNickName = (String) XposedHelpers.getObjectField(param.thisObject, "fromNickName");
@@ -833,6 +833,7 @@ public class PlayingOnLiveBaseModeFragmentHook {
             JSONObject jsonObject = new JSONObject(response.body().string());
             int code = jsonObject.getInt("code");
             if (code == 200) {
+                Log.e("BluedHook", jsonObject.toString());
                 JSONArray data = jsonObject.getJSONArray("data");
                 now_live = data.getJSONObject(0).getLong("live");
                 String anchorTitle = data.getJSONObject(0).getString("title");
