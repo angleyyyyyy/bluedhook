@@ -246,9 +246,9 @@ public class ChatHook {
                 case 25: // 闪照视频
                     convertFlashMessage(msgObj, (short) 5, msgContent, "视频");
                     break;
-//                case 55: // 如果已经被撤回，但本地已收到消息，那么处理为闪照普通消息
-//                    convertFlashMessage(msgObj, (short) 1, msgContent, "普通消息");
-//                    break;
+                case 55: // 如果已经被撤回，但本地已收到消息，那么处理为闪照普通消息
+                    convertFlashMessage(msgObj, (short) 1, msgContent + "!o.png", "普通消息");
+                    break;
             }
         } catch (Throwable e) {
             Log.e("BluedHook", "处理单条消息时出错", e);
