@@ -1,7 +1,7 @@
-开播提醒的云端数据部分是存在金山云文档
-利用金山云文档的AirScript脚本功能实现数据的同步
-以下是AirScript云端脚本内容： 
-const sheet = Application.Sheets("Blued直播检测数据")
+开播提醒的云端数据部分是存在金山云文档<br>
+利用金山云文档的AirScript脚本功能实现数据的同步<br>
+以下是AirScript云端脚本内容： <br>
+const sheet = Application.Sheets("Blued直播检测数据")<br>
 if(Context.argv.type === 'getAllData'){
   return getAllData()
 }else if(Context.argv.type === 'addAnchor'){
