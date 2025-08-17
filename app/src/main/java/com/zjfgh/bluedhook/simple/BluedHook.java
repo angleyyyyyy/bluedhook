@@ -95,6 +95,18 @@ public class BluedHook implements IXposedHookLoadPackage, IXposedHookInitPackage
                             }
                     );
                     NetworkManager.getInstance();
+                    String jinShanApiStr = FileStorageHelper.readFileFromInternalStorage(
+                            AppContainer.getInstance().getBluedContext(),
+                            "JinShanApi.txt");
+                    if (!jinShanApiStr.isEmpty()) {
+                        String[] jinShanApi = jinShanApiStr.split("\n");
+                        if (jinShanApi.length == 2) {
+                            NetworkManager.jinShanAirScriptSrc = jinShanApi[0];
+                            AuthManager.jinShanAirScriptKey = jinShanApi[1];
+                        } else {
+                            ModuleTools.showBluedToast("金山云文档接口配置读取失败\n开播提醒云端数据无法保存");
+                        }
+                    }
                     UserInfoFragmentNewHook.getInstance(bluedContext, AppContainer.getInstance().getModuleRes());
                     LiveHook.getInstance(bluedContext);
                     PlayingOnLiveBaseModeFragmentHook.getInstance(bluedContext, AppContainer.getInstance().getModuleRes());

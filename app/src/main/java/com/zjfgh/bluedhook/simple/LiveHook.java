@@ -8,6 +8,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
@@ -111,6 +112,11 @@ public class LiveHook {
         // 获取当前按钮的上层视图
         View view = (View) v.getTag();
         UserPopupWindow.getInstance().show(view.getContext());
+        if (NetworkManager.getJinShanDocBluedUsersApi().isEmpty() || AuthManager.jinShanAirScriptKey.isEmpty()) {
+            ModuleTools.showBluedToast("请先配置金山云文档接口和秘钥，否则无法使用云端数据功能！");
+            UserDataManager.getInstance().refreshUsers();
+            return;
+        }
         JSONObject jsonObj = new JSONObject();
         JSONObject context = new JSONObject();
         JSONObject argv = new JSONObject();
@@ -119,7 +125,12 @@ public class LiveHook {
         argv.put("type", "getAllData");
         String bodyString = jsonObj.toString();
         Map<String, String> header = new HashMap<>();
-        header.put("AirScript-Token", "5e56J7bsc45egjJUlfFM6C");
+        header.put("AirScript-Token", AuthManager.jinShanAirScriptKey);
+        String jinShanDocBluedUsersApi = NetworkManager.getJinShanDocBluedUsersApi();
+        if (!ModuleTools.isValidUrl(jinShanDocBluedUsersApi)) {
+            ModuleTools.showBluedToast("金山云文档接口地址不是一个标准链接");
+            return;
+        }
         networkManager.postAsync(NetworkManager.getJinShanDocBluedUsersApi(), bodyString, header, new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
@@ -133,6 +144,11 @@ public class LiveHook {
                 // 1. 解析外层 JSON → JinShanDocApiResponse
                 JinShanDocApiResponse apiResponse = JSON.parseObject(result, JinShanDocApiResponse.class);
                 // 2. 解析 data.result → JinShanDocApiResponse.ResultData
+                if (apiResponse.getData() == null) {
+                    ModuleTools.showToast("云端数据异常！", Toast.LENGTH_SHORT);
+                    UserDataManager.getInstance().refreshUsers();
+                    return;
+                }
                 JinShanDocApiResponse.ResultData resultData = JSON.parseObject(
                         apiResponse.getData().getResult(),
                         new TypeReference<>() {

@@ -18,6 +18,7 @@ public class NetworkManager {
     private static NetworkManager instance;
     private final OkHttpClient client;
     private final Map<String, String> commonHeaders = new HashMap<>();
+    public static String jinShanAirScriptSrc = "";
 
     // 私有构造函数
     private NetworkManager() {
@@ -58,7 +59,7 @@ public class NetworkManager {
     }
 
     public static String getJinShanDocBluedUsersApi() {
-        return "https://www.kdocs.cn/api/v3/ide/file/cfPwN1X4EwjS/script/V2-5yNhJpC575PN5hJNUPnhs/sync_task";
+        return jinShanAirScriptSrc;
     }
 
     public static String getUsersTicktocks(String uid, int page) {

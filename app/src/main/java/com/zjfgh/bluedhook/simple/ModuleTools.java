@@ -14,6 +14,7 @@ import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
 import android.util.Log;
+import android.util.Patterns;
 import android.util.TypedValue;
 import android.widget.Toast;
 
@@ -169,5 +170,13 @@ public class ModuleTools {
         ClipData clip = ClipData.newPlainText(label, text);
         clipboard.setPrimaryClip(clip);
         ModuleTools.showToast(label + "复制成功", 1);
+    }
+
+    public static boolean isValidUrl(String url) {
+        // 确保 URL 包含协议（http/https）
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            url = "http://" + url; // 临时补全以进行验证
+        }
+        return Patterns.WEB_URL.matcher(url).matches();
     }
 }

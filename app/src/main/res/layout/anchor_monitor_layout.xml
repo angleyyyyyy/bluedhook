@@ -5,12 +5,13 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="#1A1A1A">
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="#1A1A1A"
         android:padding="10dp"
-        android:gravity="center_horizontal">
+        android:orientation="vertical">
         <!-- Title -->
         <TextView
             android:layout_width="wrap_content"
@@ -18,7 +19,59 @@
             android:text="主播开播监听"
             android:textSize="20sp"
             android:textColor="#00FFAA"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:layout_gravity="center_horizontal" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_weight="1">
+                <!-- 可编辑内容 -->
+                <EditText
+                    android:id="@+id/etEditApiSrc"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:hint="请输入金山云文档AirSript接口"
+                    android:textColorHint="#00FFFC"
+                    android:textColor="#E0E0E0"
+                    android:textSize="14sp"
+                    android:fontFamily="monospace" />
+                <!-- 可编辑内容 -->
+                <EditText
+                    android:id="@+id/etEditApiKey"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:hint="请输入金山云文档AirSript秘钥"
+                    android:textColorHint="#00FFFC"
+                    android:textColor="#E0E0E0"
+                    android:textSize="14sp"
+                    android:fontFamily="monospace" />
+            </LinearLayout>
+
+
+            <Button
+                android:id="@+id/btn_save"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="保存"
+                android:textColor="#00FFFC"
+                tools:background="@drawable/tech_btn_bg"
+                android:fontFamily="monospace"
+                android:textAllCaps="false"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:textSize="20sp"
+                android:layout_marginStart="10dp" />
+        </LinearLayout>
+
     </LinearLayout>
     <!-- List of users -->
     <LinearLayout
@@ -27,6 +80,7 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:orientation="horizontal" />
+
     <Button
         android:id="@+id/anchor_start_button"
         android:layout_width="match_parent"
@@ -35,6 +89,6 @@
         tools:background="@drawable/neon_button"
         android:text="开始检测"
         android:textColor="#4CC9F0"
-        android:textSize="20sp"/>
+        android:textSize="20sp" />
 
 </LinearLayout>

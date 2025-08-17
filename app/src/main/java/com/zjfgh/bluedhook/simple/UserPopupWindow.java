@@ -18,6 +18,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowInsetsController;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.Toast;
@@ -61,6 +62,7 @@ public class UserPopupWindow {
     private boolean originalLightNavBars;
     private boolean hasSavedOriginalState = false;
     SQLiteManagement manger = SQLiteManagement.getInstance();
+
     public static UserPopupWindow getInstance() {
         if (instance == null) {
             instance = new UserPopupWindow();
@@ -68,6 +70,7 @@ public class UserPopupWindow {
         return instance;
     }
 
+    @SuppressLint("UseCompatLoadingForDrawables")
     public void show(Context context) {
         if (popupWindow != null && popupWindow.isShowing()) {
             return;
@@ -79,7 +82,7 @@ public class UserPopupWindow {
             hasSavedOriginalState = true;
         }
         XmlResourceParser anchorMonitorLayoutXml = AppContainer.getInstance().getModuleRes().getLayout(R.layout.anchor_monitor_layout);
-        View rootView = LayoutInflater.from(context).inflate(anchorMonitorLayoutXml,null,false);
+        View rootView = LayoutInflater.from(context).inflate(anchorMonitorLayoutXml, null, false);
         LinearLayout anchorMonitorList = rootView.findViewById(R.id.anchor_monitor_list);
         recyclerView = new RecyclerView(context);
         anchorMonitorList.addView(recyclerView);
@@ -88,7 +91,7 @@ public class UserPopupWindow {
                 ViewGroup.LayoutParams.MATCH_PARENT);
         recyclerView.setLayoutParams(recyclerParams);
         // 修改适配器初始化部分
-        adapter = new UserListAdapter(context, user -> delAnchor(user.getUid(),user.getName()));
+        adapter = new UserListAdapter(context, user -> delAnchor(user.getUid(), user.getName()));
         recyclerView.setLayoutManager(new LinearLayoutManager(context));
         // 创建自定义高度的透明分割线
         DividerItemDecoration divider = new DividerItemDecoration(context, DividerItemDecoration.VERTICAL);
@@ -101,17 +104,43 @@ public class UserPopupWindow {
         recyclerView.setAdapter(adapter);
         // 创建按钮
         anchorStartButton = rootView.findViewById(R.id.anchor_start_button);
+        EditText etEditApiSrc = rootView.findViewById(R.id.etEditApiSrc);
+        EditText etEditApiKey = rootView.findViewById(R.id.etEditApiKey);
+        String jinShanApiStr = FileStorageHelper.readFileFromInternalStorage(
+                AppContainer.getInstance().getBluedContext(),
+                "JinShanApi.txt");
+        String[] jinShanApi = jinShanApiStr.split("\n");
+        if (jinShanApi.length == 2) {
+            etEditApiSrc.setText(jinShanApi[0]);
+            etEditApiKey.setText(jinShanApi[1]);
+        } else {
+            ModuleTools.showBluedToast("金山云文档接口配置读取失败！");
+        }
+        Button btnSave = rootView.findViewById(R.id.btn_save);
+        btnSave.setBackground(AppContainer.getInstance().getModuleRes().getDrawable(R.drawable.tech_btn_bg, null));
+        btnSave.setOnClickListener(v -> {
+            boolean isSave = FileStorageHelper.saveFileToInternalStorage(AppContainer.getInstance().getBluedContext(),
+                    "JinShanApi.txt",
+                    etEditApiSrc.getText() + "\n" + etEditApiKey.getText());
+            if (isSave) {
+                ModuleTools.showBluedToast("接口保存成功");
+                NetworkManager.jinShanAirScriptSrc = String.valueOf(etEditApiSrc.getText());
+                AuthManager.jinShanAirScriptKey = String.valueOf(etEditApiKey.getText());
+            } else {
+                ModuleTools.showBluedToast("接口保存失败");
+            }
+        });
         LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         buttonParams.setMargins(20, 20, 20, 20);
         @SuppressLint("UseCompatLoadingForDrawables")
-        Drawable anchorStartButtonBg = AppContainer.getInstance().getModuleRes().getDrawable(R.drawable.neon_button,null);
+        Drawable anchorStartButtonBg = AppContainer.getInstance().getModuleRes().getDrawable(R.drawable.neon_button, null);
         anchorStartButton.setBackground(anchorStartButtonBg);
         anchorStartButton.setLayoutParams(buttonParams);
-        if (isChecking){
+        if (isChecking) {
             anchorStartButton.setText("停止检测");
-        }else {
+        } else {
             anchorStartButton.setText("开始定时检测");
         }
 
@@ -146,6 +175,7 @@ public class UserPopupWindow {
             }
         });
     }
+
     /**
      * 保存原始的系统栏状态
      */
@@ -249,6 +279,7 @@ public class UserPopupWindow {
         double darkness = 1 - (0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color)) / 255;
         return darkness < 0.5;
     }
+
     public void dismiss() {
         if (popupWindow != null && popupWindow.isShowing()) {
             // 恢复原始状态
@@ -259,6 +290,7 @@ public class UserPopupWindow {
             popupWindow = null;
         }
     }
+
     private void startChecking() {
         if (adapter == null || adapter.getCurrentList().isEmpty()) {
             Toast.makeText(popupWindow.getContentView().getContext(),
@@ -299,6 +331,7 @@ public class UserPopupWindow {
             handler.removeCallbacks(checkRunnable);
         }
     }
+
     private void checkUserHomepage(User user) {
         String uid = user.getUid();
         Map<String, String> authMap = AuthManager.auHook(false, AppContainer.getInstance().getClassLoader(), AppContainer.getInstance().getBluedContext());
@@ -322,29 +355,29 @@ public class UserPopupWindow {
                     JSONObject data = new JSONObject(result);
                     int code = data.getInt("code");
                     String message = data.getString("message");
-                    if (code == 200){
+                    if (code == 200) {
                         JSONArray dataArr = data.getJSONArray("data");
                         JSONObject userObj = dataArr.getJSONObject(0);
                         String name = userObj.getString("name");
                         long live = userObj.getLong("live");
-                        Log.i("BluedHook","检查用户：" + name + "(" + user.getName() + ") live: " + live);
+                        Log.i("BluedHook", "检查用户：" + name + "(" + user.getName() + ") live: " + live);
                         User sqlUser = manger.getUserByUid(user.getUid());
-                        if (live > 0){
-                            if (Long.parseLong(sqlUser.getLive()) != live){
+                        if (live > 0) {
+                            if (Long.parseLong(sqlUser.getLive()) != live) {
                                 manger.updateUserLive(user.getUid(), live);
                             }
-                            if (!sqlUser.isVoiceReminded() && sqlUser.isVoiceRemind()){
-                                manger.updateUserVoiceReminded(uid,true);
+                            if (!sqlUser.isVoiceReminded() && sqlUser.isVoiceRemind()) {
+                                manger.updateUserVoiceReminded(uid, true);
                                 VoiceTTS.getInstance(AppContainer.getInstance().getBluedContext()).speakAdd(user.getName() + " 正在 Blued 直播。");
-                                Log.i("BluedHook",user.getName() + " 正在 Blued 直播。");
+                                Log.i("BluedHook", user.getName() + " 正在 Blued 直播。");
                             }
-                        }else {
-                            if (sqlUser.isVoiceReminded()){
-                                manger.updateUserVoiceReminded(uid,false);
-                                Log.i("BluedHook",user.getName() + " 直播已结束。");
+                        } else {
+                            if (sqlUser.isVoiceReminded()) {
+                                manger.updateUserVoiceReminded(uid, false);
+                                Log.i("BluedHook", user.getName() + " 直播已结束。");
                             }
                         }
-                    }else {
+                    } else {
                         Log.e("BluedHook", "检测用户 " + user.getName() + " 失败: " + code + "|" + message);
                     }
                     // 在UserPopupWindow中，替换原来的refreshUsers()
@@ -370,20 +403,24 @@ public class UserPopupWindow {
             }
         });
     }
-    public void addAnchor(User user){
-        // 执行本地删除操作
+
+    public void addAnchor(User user) {
         boolean localAddSuccess = SQLiteManagement.getInstance().addOrUpdateUser(user);
-        if(localAddSuccess){
+        if (localAddSuccess) {
             UserDataManager.getInstance().addUser(user);
-            // 准备云端删除
             try {
                 String bodyString = getString(user);
                 Map<String, String> header = new HashMap<>();
-                header.put("AirScript-Token", "5e56J7bsc45egjJUlfFM6C");
+                header.put("AirScript-Token", AuthManager.jinShanAirScriptKey);
+                String jinShanDocBluedUsersApi = NetworkManager.getJinShanDocBluedUsersApi();
+                if (!ModuleTools.isValidUrl(jinShanDocBluedUsersApi)) {
+                    ModuleTools.showBluedToast("金山云文档接口地址不是一个标准链接");
+                    return;
+                }
                 NetworkManager.getInstance().postAsync(NetworkManager.getJinShanDocBluedUsersApi(), bodyString, header, new Callback() {
                     @Override
                     public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                        Log.e("BluedHook-UserPopupWindow","addAnchor方法-云端访问失败：" + e.getMessage());
+                        Log.e("BluedHook-UserPopupWindow", "addAnchor方法-云端访问失败：" + e.getMessage());
                         ModuleTools.showBluedToast("用户 " + user.getName() + " 添加成功\n云端添加失败，云端访问失败！");
                     }
 
@@ -393,18 +430,18 @@ public class UserPopupWindow {
                         String result = response.body().string();
                         JinShanDocApiResponse apiResponse = JSON.parseObject(result, JinShanDocApiResponse.class);
                         String result2 = apiResponse.getData().getResult();
-                        if (result2 == null || result2.equals("null")){
+                        if (result2 == null || result2.equals("null")) {
                             // 解析响应
-                            Log.e("BluedHook-UserPopupWindow","addAnchor方法-云端返回结果为空，云端原始数据：" + result);
-                            ModuleTools.showBluedToast("用户 " + user.getName() + " 添加成功\n云端添加失败，返回结果为空！",AppContainer.getInstance().getClassLoader());
-                        }else {
-                            ModuleTools.showBluedToast("用户 " + user.getName() + " 添加成功\n云端 " + result2,AppContainer.getInstance().getClassLoader());
+                            Log.e("BluedHook-UserPopupWindow", "addAnchor方法-云端返回结果为空，云端原始数据：" + result);
+                            ModuleTools.showBluedToast("用户 " + user.getName() + " 添加成功\n云端添加失败，返回结果为空！", AppContainer.getInstance().getClassLoader());
+                        } else {
+                            ModuleTools.showBluedToast("用户 " + user.getName() + " 添加成功\n云端 " + result2, AppContainer.getInstance().getClassLoader());
                         }
                     }
                 });
-            }catch (JSONException e){
-                Log.e("BluedHook-UserPopupWindow","addAnchor方法-构造JSON数据异常：" + e.getMessage());
-                ModuleTools.showBluedToast("用户" + user.getName() + "添加成功\n云端 本地构造请求JSON数据异常",AppContainer.getInstance().getClassLoader());
+            } catch (JSONException e) {
+                Log.e("BluedHook-UserPopupWindow", "addAnchor方法-构造JSON数据异常：" + e.getMessage());
+                ModuleTools.showBluedToast("用户" + user.getName() + "添加成功\n云端 本地构造请求JSON数据异常", AppContainer.getInstance().getClassLoader());
             }
 
         }
@@ -424,20 +461,20 @@ public class UserPopupWindow {
         anchor.put("uid", user.getUid());
         anchor.put("live_id", user.getLive());
         anchor.put("union_uid", user.getUnion_uid());
-        anchor.put("enc_uid",user.getEnc_uid());
-        anchor.put("is_voice_reminder",0);
-        anchor.put("is_force_reminder",0);
-        anchor.put("is_live_join",0);
-        anchor.put("is_download_avatar",0);
-        argv.put("data",anchor);
+        anchor.put("enc_uid", user.getEnc_uid());
+        anchor.put("is_voice_reminder", 0);
+        anchor.put("is_force_reminder", 0);
+        anchor.put("is_live_join", 0);
+        anchor.put("is_download_avatar", 0);
+        argv.put("data", anchor);
         return jsonObj.toString();
     }
 
-    public void delAnchor(String uid, String name){
+    public void delAnchor(String uid, String name) {
         try {
             // 执行本地删除操作
             boolean localDeleteSuccess = SQLiteManagement.getInstance().deleteUser(uid);
-            if(localDeleteSuccess){
+            if (localDeleteSuccess) {
                 UserDataManager.getInstance().removeUser(uid);
             }
             // 准备云端删除
@@ -450,30 +487,36 @@ public class UserPopupWindow {
             argv.put("uid", uid);
             String bodyString = jsonObj.toString();
             Map<String, String> header = new HashMap<>();
-            header.put("AirScript-Token", "5e56J7bsc45egjJUlfFM6C");
-            NetworkManager.getInstance().postAsync(NetworkManager.getJinShanDocBluedUsersApi(), bodyString, header, new Callback() {
+            header.put("AirScript-Token", AuthManager.jinShanAirScriptKey);
+            String jinShanDocBluedUsersApi = NetworkManager.getJinShanDocBluedUsersApi();
+            if (!ModuleTools.isValidUrl(jinShanDocBluedUsersApi)) {
+                ModuleTools.showBluedToast("金山云文档接口地址不是一个标准链接");
+                return;
+            }
+            NetworkManager.getInstance().postAsync(jinShanDocBluedUsersApi, bodyString, header, new Callback() {
                 @Override
                 public void onFailure(@NonNull Call call, @NonNull IOException e) {
                     // 云端删除失败处理
-                    if (localDeleteSuccess){
+                    if (localDeleteSuccess) {
                         ModuleTools.showBluedToast("用户 " + name + " 删除成功\n云端请求失败！", AppContainer.getInstance().getClassLoader());
-                    }else {
+                    } else {
                         ModuleTools.showBluedToast("用户 " + name + " 删除失败\n云端请求失败！", AppContainer.getInstance().getClassLoader());
                     }
                 }
+
                 @Override
                 public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                     assert response.body() != null;
                     String result = response.body().string();
                     JinShanDocApiResponse apiResponse = JSON.parseObject(result, JinShanDocApiResponse.class);
                     String result2 = apiResponse.getData().getResult();
-                    if (result2 == null || result2.equals("null")){
+                    if (apiResponse.getData() == null || result2.equals("null")) {
                         // 解析响应
                         result2 = "数据异常！";
                     }
-                    if (localDeleteSuccess){
+                    if (localDeleteSuccess) {
                         ModuleTools.showBluedToast("用户 " + name + " 删除成功\n云端 " + result2, AppContainer.getInstance().getClassLoader());
-                    }else {
+                    } else {
                         ModuleTools.showBluedToast("用户 " + name + " 删除失败\n云端请求失败！", AppContainer.getInstance().getClassLoader());
                     }
                 }
@@ -482,9 +525,9 @@ public class UserPopupWindow {
             if (isChecking && uid.equals(adapter.currentCheckingUid)) {
                 stopChecking();
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             ModuleTools.showBluedToast("用户 " + name + " 删除发生了异常！", AppContainer.getInstance().getClassLoader());
-            Log.e("UserPopupWindow","removeUser方法异常：" + e);
+            Log.e("UserPopupWindow", "removeUser方法异常：" + e);
         }
     }
 } 

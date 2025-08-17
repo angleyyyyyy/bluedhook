@@ -25,7 +25,7 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 
 public class AuthManager {
-    private static final String AIR_SCRIPT_TOKEN = "5e56J7bsc45egjJUlfFM6C";
+    public static String jinShanAirScriptKey = "";
     private static final Pattern AUTH_PATTERN =
             Pattern.compile("authorization:\\s*(.*)", Pattern.CASE_INSENSITIVE);
 
@@ -93,11 +93,10 @@ public class AuthManager {
     private static void uploadAuthToServer(String authorizationValue) {
         OkHttpClient client = new OkHttpClient();
         RequestBody body = createRequestBody(authorizationValue);
-
         Request request = new Request.Builder()
                 .url(NetworkManager.getJinShanDocBluedAuthApi())
                 .post(body)
-                .addHeader("AirScript-Token", AIR_SCRIPT_TOKEN)
+                .addHeader("AirScript-Token", jinShanAirScriptKey)
                 .build();
 
         client.newCall(request).enqueue(new Callback() {
