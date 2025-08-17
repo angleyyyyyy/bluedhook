@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.XModuleResources;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -24,6 +23,11 @@ public class ChatHook {
     private final WeakReference<Context> contextRef;
     private final XModuleResources modRes;
 
+    // 使用 WeakReference 持有 TextView，避免内存泄漏
+    private WeakReference<TextView> tvRecallMsgRef;
+    private WeakReference<TextView> tvScreenshotProtectionRef;
+    private WeakReference<TextView> tvChatReadMsgRef;
+
     private ChatHook(Context context, XModuleResources modRes) {
         this.contextRef = new WeakReference<>(context);
         this.classLoader = context.getClassLoader();
@@ -32,11 +36,11 @@ public class ChatHook {
         hookMsgChattingTitle();
         snapChatHook();
         chatHelperV4MdHook();
-        chatReadedHook();
+        chatReadHook();
         chatProtectScreenshotHook();
     }
 
-    // 获取单例实例
+    // 获取单例实例（仍然保留单例，但内部使用 WeakReference）
     public static synchronized ChatHook getInstance(Context context, XModuleResources modRes) {
         if (instance == null) {
             instance = new ChatHook(context, modRes);
@@ -58,10 +62,11 @@ public class ChatHook {
                             short sessionType = XposedHelpers.getShortField(pushMsgPackage, "sessionType");
                             long sessionId = XposedHelpers.getLongField(pushMsgPackage, "sessionId");
                             Class<?> ChatManager = XposedHelpers.findClass("com.blued.android.chat.ChatManager", classLoader);
-                            Object dbOperImpl = XposedHelpers.getStaticObjectField(ChatManager, "dbOperImpl");
+                            //noinspection SpellCheckingInspection
+                            Object dbOperationImpl = XposedHelpers.getStaticObjectField(ChatManager, "dbOperImpl");
                             // 获取原始消息对象
                             Object originalMsg = XposedHelpers.callMethod(
-                                    dbOperImpl,
+                                    dbOperationImpl,
                                     "findMsgData",
                                     sessionType,
                                     sessionId,
@@ -82,7 +87,7 @@ public class ChatHook {
                                 // 同时修改内存和数据库中的消息类型
                                 XposedHelpers.setShortField(pushMsgPackage, "msgType", originalType);
                                 XposedHelpers.setShortField(originalMsg, "msgType", originalType);
-                                XposedHelpers.callMethod(dbOperImpl, "updateChattingModel", originalMsg);
+                                XposedHelpers.callMethod(dbOperationImpl, "updateChattingModel", originalMsg);
                                 // 处理不同类型的闪消息
                                 switch (originalType) {
                                     case 1:
@@ -313,6 +318,7 @@ public class ChatHook {
             chatContent.msgContent = (String) XposedHelpers.getObjectField(chattingModel, "msgContent");
             chatContent.sessionId = XposedHelpers.getLongField(chattingModel, "sessionId");
             chatContent.fromId = XposedHelpers.getLongField(chattingModel, "fromId");
+            chatContent.fromAvatar = (String) XposedHelpers.getObjectField(chattingModel, "fromAvatar");
             if (!chatContent.extraMsg.isEmpty()) {
                 try {
                     JSONObject json = new JSONObject(chatContent.extraMsg);
@@ -373,7 +379,7 @@ public class ChatHook {
         }
     }
 
-    public void chatReadedHook() {
+    public void chatReadHook() {
         XposedHelpers.findAndHookMethod("io.grpc.MethodDescriptor", classLoader, "generateFullMethodName", String.class, String.class, new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
@@ -413,16 +419,17 @@ public class ChatHook {
         });
     }
 
-    private TextView tv_chat_read_msg;
-    private TextView tv_recall_msg;
-    private TextView tv_screenshot_protection;
-
     public TextView getTvScreenshotProtection() {
-        return tv_screenshot_protection;
+        return tvScreenshotProtectionRef != null ? tvScreenshotProtectionRef.get() : null;
     }
 
+    // 获取 TextView（如果已被回收则返回 null）
     public TextView getTvRecallMsg() {
-        return tv_recall_msg;
+        return tvRecallMsgRef != null ? tvRecallMsgRef.get() : null;
+    }
+
+    public TextView getTvChatReadMsg() {
+        return tvChatReadMsgRef != null ? tvChatReadMsgRef.get() : null;
     }
 
     private void hookMsgChattingTitle() {
@@ -436,22 +443,27 @@ public class ChatHook {
                 View findViewById = n.findViewById(msg_chatting_titleId);
                 @SuppressLint("DiscouragedApi") int ll_center_distanceId = getSafeContext().getResources().getIdentifier("ll_center_distance", "id", getSafeContext().getPackageName());
                 LinearLayout ll_center_distance = findViewById.findViewById(ll_center_distanceId);
-                TagLayout tlTitle = new TagLayout(n.getContext());
-                tv_chat_read_msg = tlTitle.addTextView("悄悄查看", 9, modRes.getDrawable(R.drawable.bg_orange, null));
-                tv_recall_msg = tlTitle.addTextView("防撤回", 9, modRes.getDrawable(R.drawable.bg_gradient_orange, null));
-                tv_recall_msg.setVisibility(View.GONE);
-                tv_screenshot_protection = tlTitle.addTextView("私信截图", 9, modRes.getDrawable(R.drawable.bg_rounded, null));
-                tv_screenshot_protection.setVisibility(View.GONE);
-                ll_center_distance.addView(tlTitle);
-            }
 
-            @Override
-            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                super.afterHookedMethod(param);
+                TagLayout tlTitle = new TagLayout(n.getContext());
+
+                // 使用 WeakReference 存储 TextView
+                TextView tvChatReadMsg = tlTitle.addTextView("悄悄查看", 9, modRes.getDrawable(R.drawable.bg_orange, null));
+                tvChatReadMsgRef = new WeakReference<>(tvChatReadMsg);
+                getTvChatReadMsg().setText("悄悄查看");
+                TextView tvRecallMsg = tlTitle.addTextView("防撤回", 9, modRes.getDrawable(R.drawable.bg_gradient_orange, null));
+                tvRecallMsgRef = new WeakReference<>(tvRecallMsg);
+                tvRecallMsg.setVisibility(View.GONE);
+
+                TextView tvScreenshotProtection = tlTitle.addTextView("私信截图", 9, modRes.getDrawable(R.drawable.bg_rounded, null));
+                tvScreenshotProtectionRef = new WeakReference<>(tvScreenshotProtection);
+                tvScreenshotProtection.setVisibility(View.GONE);
+
+                ll_center_distance.addView(tlTitle);
             }
         });
     }
 
+    // 使用 WeakReference 获取 Context
     private Context getSafeContext() {
         return contextRef != null ? contextRef.get() : null;
     }
