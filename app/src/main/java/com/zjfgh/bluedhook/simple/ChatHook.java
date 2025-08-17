@@ -426,12 +426,12 @@ public class ChatHook {
     }
 
     private void hookMsgChattingTitle() {
-        XposedHelpers.findAndHookMethod("com.soft.blued.ui.msg.MsgChattingFragment", classLoader, "ag", new XC_MethodHook() {
+        XposedHelpers.findAndHookMethod("com.soft.blued.ui.msg.MsgChattingFragment", classLoader, "ah", new XC_MethodHook() {
             @SuppressLint("UseCompatLoadingForDrawables")
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                 super.beforeHookedMethod(param);
-                View n = (View) XposedHelpers.getObjectField(param.thisObject, "n");
+                View n = (View) XposedHelpers.getObjectField(param.thisObject, "o");
                 @SuppressLint("DiscouragedApi") int msg_chatting_titleId = getSafeContext().getResources().getIdentifier("msg_chatting_title", "id", getSafeContext().getPackageName());
                 View findViewById = n.findViewById(msg_chatting_titleId);
                 @SuppressLint("DiscouragedApi") int ll_center_distanceId = getSafeContext().getResources().getIdentifier("ll_center_distance", "id", getSafeContext().getPackageName());
