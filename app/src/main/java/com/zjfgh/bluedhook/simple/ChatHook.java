@@ -17,6 +17,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 
@@ -50,7 +51,7 @@ public class ChatHook {
         testHook();
     }
 
-    Object IIllIlIIIII;
+    byte[] bytes;
 
     private void testHook() {
         XposedHelpers.findAndHookMethod("com.soft.blued.ui.setting.fragment.CollectionListFragment", classLoader, "a", "android.view.View", new XC_MethodHook() {
@@ -87,7 +88,7 @@ public class ChatHook {
                                     String publicKey = response.headers().get("x-bc-encode-server-public-key");
                                     Log.w("BluedHook", "publicKey" + publicKey);
                                     String en_data = root.getString("en_data");
-                                    Log.w("BluedHook-------", ModuleTools.enDataDecrypt(en_data));
+                                    Log.w("BluedHook-------", ModuleTools.enDataDecrypt(en_data, bytes));
                                 } catch (JSONException e) {
                                     throw new RuntimeException(e);
                                 }
@@ -98,12 +99,15 @@ public class ChatHook {
                 linearLayout.addView(textView1);
             }
         });
+
         XposedHelpers.findAndHookMethod("com.blued.android.http.encode.utils.c", classLoader, "I111I1lI1I1", "java.lang.String", "byte[]", "java.lang.String", new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                 super.beforeHookedMethod(param);
                 Log.w("BluedHook", "参数1" + param.args[0]);
-                Log.w("BluedHook", "参数2" + param.args[1].toString());
+                bytes = (byte[]) param.args[1];
+                String text = new String(bytes, StandardCharsets.UTF_8);
+                Log.w("BluedHook", "参数2" + text);
                 Log.w("BluedHook", "参数3" + param.args[2]);
             }
 
@@ -120,6 +124,18 @@ public class ChatHook {
                 String publicKey = (String) XposedHelpers.callMethod(param.args[1], "get", "x-bc-encode-server-public-key");
                 Log.w("BluedHook", "参数22---" + publicKey);
                 Log.w("BluedHook", "参数32---" + param.args[2]);
+            }
+
+            @Override
+            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                super.afterHookedMethod(param);
+            }
+        });
+        XposedHelpers.findAndHookMethod("com.blued.android.http.encode.utils.b", classLoader, "IIllIlIIIII", new XC_MethodHook() {
+            @Override
+            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                super.beforeHookedMethod(param);
+                Log.w("BluedHook", "重新获取公钥");
             }
 
             @Override

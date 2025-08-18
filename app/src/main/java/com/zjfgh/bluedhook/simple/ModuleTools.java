@@ -181,7 +181,7 @@ public class ModuleTools {
         return Patterns.WEB_URL.matcher(url).matches();
     }
 
-    public static String enDataDecrypt(String enData) {
+    public static String enDataDecrypt(String enData, byte[] bytes) {
         Class<?> encodeUtilsC = XposedHelpers.findClass("com.blued.android.http.encode.utils.c", AppContainer.getInstance().getClassLoader());
         Class<?> bClass = XposedHelpers.findClass("com.blued.android.http.encode.utils.b", AppContainer.getInstance().getClassLoader());
         Object IIllIlIIIII = XposedHelpers.getStaticObjectField(bClass, "IIllIlIIIII");
@@ -192,6 +192,6 @@ public class ModuleTools {
         Log.w("BluedHook", "-------->" + l1l1l1l1);
         //byte[] bytes = c.I111I1lI1I1(IIllIlIIIII.I111I1lI1I1(), );
 
-        return (String) XposedHelpers.callStaticMethod(encodeUtilsC, "I111I1lI1I1", enData, l1l1l1l1, "https://social.irisgw.cn/users/collect/list?uid=104121534&size=20&from=collect&page=1&sort=default");
+        return (String) XposedHelpers.callStaticMethod(encodeUtilsC, "I111I1lI1I1", enData, bytes, "https://social.irisgw.cn/users/collect/list?uid=104121534&size=20&from=collect&page=1&sort=default");
     }
 }
