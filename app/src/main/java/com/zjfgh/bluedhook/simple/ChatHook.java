@@ -5,17 +5,26 @@ import android.content.Context;
 import android.content.res.XModuleResources;
 import android.util.Log;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.List;
+import java.util.Objects;
 
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedHelpers;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 
 public class ChatHook {
     private final ClassLoader classLoader;
@@ -38,6 +47,86 @@ public class ChatHook {
         chatHelperV4MdHook();
         chatReadHook();
         chatProtectScreenshotHook();
+        testHook();
+    }
+
+    Object IIllIlIIIII;
+
+    private void testHook() {
+        XposedHelpers.findAndHookMethod("com.soft.blued.ui.setting.fragment.CollectionListFragment", classLoader, "a", "android.view.View", new XC_MethodHook() {
+            @Override
+            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                super.beforeHookedMethod(param);
+
+            }
+
+            @Override
+            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                super.afterHookedMethod(param);
+                Object b = param.args[0];
+                @SuppressLint("DiscouragedApi") int tv_collection_numId = Objects.requireNonNull(getSafeContext()).getResources().getIdentifier("tv_collection_num", "id", getSafeContext().getPackageName());
+                Log.e("BluedHook", "tv_collection_numId" + tv_collection_numId);
+                TextView textView = (TextView) XposedHelpers.callMethod(b, "findViewById", tv_collection_numId);
+                LinearLayout linearLayout = (LinearLayout) textView.getParent();
+                TextView textView1 = new TextView(getSafeContext().getApplicationContext());
+                textView.setPadding(ModuleTools.dpToPx(10), 0, 0, 0);
+                textView1.setText("查看收藏更多信息");
+                textView1.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        NetworkManager.getInstance().getAsync(NetworkManager.getUserCollectApi(), AuthManager.auHook(false, classLoader, contextRef.get()), new Callback() {
+                            @Override
+                            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+
+                            }
+
+                            @Override
+                            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                                try {
+                                    JSONObject root = new JSONObject(response.body().string());
+                                    String publicKey = response.headers().get("x-bc-encode-server-public-key");
+                                    Log.w("BluedHook", "publicKey" + publicKey);
+                                    String en_data = root.getString("en_data");
+                                    Log.w("BluedHook-------", ModuleTools.enDataDecrypt(en_data));
+                                } catch (JSONException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
+                        });
+                    }
+                });
+                linearLayout.addView(textView1);
+            }
+        });
+        XposedHelpers.findAndHookMethod("com.blued.android.http.encode.utils.c", classLoader, "I111I1lI1I1", "java.lang.String", "byte[]", "java.lang.String", new XC_MethodHook() {
+            @Override
+            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                super.beforeHookedMethod(param);
+                Log.w("BluedHook", "参数1" + param.args[0]);
+                Log.w("BluedHook", "参数2" + param.args[1].toString());
+                Log.w("BluedHook", "参数3" + param.args[2]);
+            }
+
+            @Override
+            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                super.afterHookedMethod(param);
+            }
+        });
+        XposedHelpers.findAndHookMethod("com.blued.android.http.encode.utils.b", classLoader, "I111I1lI1I1", "java.lang.String", "okhttp3.Headers", "java.lang.String", new XC_MethodHook() {
+            @Override
+            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                super.beforeHookedMethod(param);
+                Log.w("BluedHook", "参数12---" + param.args[0]);
+                String publicKey = (String) XposedHelpers.callMethod(param.args[1], "get", "x-bc-encode-server-public-key");
+                Log.w("BluedHook", "参数22---" + publicKey);
+                Log.w("BluedHook", "参数32---" + param.args[2]);
+            }
+
+            @Override
+            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                super.afterHookedMethod(param);
+            }
+        });
     }
 
     // 获取单例实例（仍然保留单例，但内部使用 WeakReference）

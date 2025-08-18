@@ -114,6 +114,10 @@ public class NetworkManager {
         return "https://social.irisgw.cn/users/recommend";
     }
 
+    public static String getUserCollectApi() {
+        return "https://social.irisgw.cn/users/collect/list?uid=104121534&size=20&from=collect&page=1&sort=default";
+    }
+
     // 获取配置好的OkHttpClient实例
     public OkHttpClient getClient() {
         return client;

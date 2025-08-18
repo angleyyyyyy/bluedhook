@@ -8,11 +8,11 @@ import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
-import android.speech.tts.TextToSpeech;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
+import android.util.Base64;
 import android.util.Log;
 import android.util.Patterns;
 import android.util.TypedValue;
@@ -22,6 +22,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -178,5 +179,19 @@ public class ModuleTools {
             url = "http://" + url; // 临时补全以进行验证
         }
         return Patterns.WEB_URL.matcher(url).matches();
+    }
+
+    public static String enDataDecrypt(String enData) {
+        Class<?> encodeUtilsC = XposedHelpers.findClass("com.blued.android.http.encode.utils.c", AppContainer.getInstance().getClassLoader());
+        Class<?> bClass = XposedHelpers.findClass("com.blued.android.http.encode.utils.b", AppContainer.getInstance().getClassLoader());
+        Object IIllIlIIIII = XposedHelpers.getStaticObjectField(bClass, "IIllIlIIIII");
+        Object I111I1lI1I1 = XposedHelpers.callMethod(IIllIlIIIII, "I111I1lI1I1");
+        Log.w("BluedHook", "____>" + I111I1lI1I1);
+        Object l1l1l1l1 = XposedHelpers.callStaticMethod(encodeUtilsC, "I111I1lI1I1", I111I1lI1I1, new String(Base64.decode("", 0), StandardCharsets.UTF_8));
+        Log.w("BluedHook", "---->" + IIllIlIIIII);
+        Log.w("BluedHook", "-------->" + l1l1l1l1);
+        //byte[] bytes = c.I111I1lI1I1(IIllIlIIIII.I111I1lI1I1(), );
+
+        return (String) XposedHelpers.callStaticMethod(encodeUtilsC, "I111I1lI1I1", enData, l1l1l1l1, "https://social.irisgw.cn/users/collect/list?uid=104121534&size=20&from=collect&page=1&sort=default");
     }
 }
