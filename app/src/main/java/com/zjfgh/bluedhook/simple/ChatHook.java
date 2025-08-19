@@ -6,6 +6,8 @@ import android.content.Context;
 import android.content.res.XModuleResources;
 import android.content.res.XmlResourceParser;
 import android.graphics.Color;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
@@ -25,8 +27,10 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedHelpers;
@@ -60,6 +64,7 @@ public class ChatHook {
         testHook();
     }
 
+    private static final Random random = new Random();
 
     private void testHook() {
         XposedHelpers.findAndHookMethod("com.soft.blued.ui.setting.fragment.CollectionListFragment", classLoader, "a", "android.view.View", new XC_MethodHook() {
@@ -152,6 +157,79 @@ public class ChatHook {
                 super.afterHookedMethod(param);
             }
         });
+        XposedHelpers.findAndHookMethod(
+                "com.soft.blued.ui.welcome.SerialSplashFragment",
+                classLoader,
+                "d", String.class,
+                new XC_MethodHook() {
+                    @Override
+                    protected void afterHookedMethod(MethodHookParam param) {
+                        Object fragment = param.thisObject;
+                        // 1. 动态获取广告数据对象
+                        Object adExtra = XposedHelpers.getObjectField(fragment, "i"); // 广告数据字段名
+                        // 随机延迟 1-3秒（模拟用户观看）
+                        int delay = 1000 + random.nextInt(2000);
+                        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                            // 2. 先伪造曝光上报
+                            fakeAdExposure(adExtra);
+                            // 3. 按30%概率伪造点击
+                            if (random.nextFloat() < 0.3f) {
+                                fakeAdClick(adExtra);
+                            }
+                            // 4. 实际跳过广告
+                            XposedHelpers.callMethod(fragment, "w");
+                        }, delay);
+                        ModuleTools.showToast("已跳过开机广告", Toast.LENGTH_LONG);
+                    }
+                }
+        );
+    }
+
+    // 伪造曝光上报
+    private void fakeAdExposure(Object adExtra) {
+        try {
+            // 修改曝光时间戳为当前时间
+            Object coordinate = XposedHelpers.getObjectField(adExtra, "coordinate");
+            XposedHelpers.setObjectField(coordinate, "show_time", System.currentTimeMillis() + "");
+            XposedHelpers.setObjectField(coordinate, "post_show_time", System.currentTimeMillis() + "");
+            Object show_url = XposedHelpers.getObjectField(adExtra, "show_url");
+            // 触发上报逻辑（原始代码中的上报路径）
+            Class<?> FindHttpUtils = XposedHelpers.findClass(
+                    "com.soft.blued.http.FindHttpUtils",
+                    classLoader);
+            XposedHelpers.callStaticMethod(
+                    FindHttpUtils,
+                    "a",
+                    show_url,
+                    coordinate);
+            Log.d(TAG, "伪装曝光上报");
+        } catch (Exception e) {
+            Log.e(TAG, "伪装曝光上报程序异常:" + e);
+        }
+    }
+
+    // 伪造点击上报
+    private void fakeAdClick(Object adExtra) {
+        try {
+            // 随机生成点击坐标（模拟真实点击位置）
+            Object coordinate = XposedHelpers.getObjectField(adExtra, "coordinate");
+            XposedHelpers.setObjectField(coordinate, "down_x", random.nextInt(300) + "");
+            XposedHelpers.setObjectField(coordinate, "down_y", random.nextInt(500) + "");
+            XposedHelpers.setObjectField(coordinate, "click_time", System.currentTimeMillis() + "");
+            Object click_url = XposedHelpers.getObjectField(adExtra, "click_url");
+            // 触发点击上报
+            Class<?> FindHttpUtils = XposedHelpers.findClass(
+                    "com.soft.blued.http.FindHttpUtils",
+                    classLoader);
+            XposedHelpers.callStaticMethod(
+                    FindHttpUtils,
+                    "a",
+                    click_url,
+                    coordinate);
+            Log.d(TAG, "伪造点击上报");
+        } catch (Exception e) {
+            Log.e(TAG, "伪造点击上报程序异常:" + e);
+        }
     }
 
     // 获取单例实例（仍然保留单例，但内部使用 WeakReference）
