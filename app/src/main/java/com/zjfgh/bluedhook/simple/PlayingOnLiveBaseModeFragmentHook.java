@@ -697,7 +697,7 @@ public class PlayingOnLiveBaseModeFragmentHook {
                 super.afterHookedMethod(param);
             }
         });
-        XposedHelpers.findAndHookMethod("com.blued.android.module.live_china.view.UserCardDialogFragment", classLoader, "J", new XC_MethodHook() {
+        XposedHelpers.findAndHookMethod("com.blued.android.module.live_china.view.UserCardDialogFragment", classLoader, "I", new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                 super.beforeHookedMethod(param);
@@ -714,7 +714,7 @@ public class PlayingOnLiveBaseModeFragmentHook {
                     TextView tv_attentionView = getTextView(userCardDialogFragment);
                     tv_attentionView.setText("此用户已将你拉黑");
                 }
-
+                Log.w("BluedHook", "解除拉黑程序");
             }
 
             @NonNull

@@ -153,6 +153,7 @@ public class UserInfoFragmentNewHook {
                         flow_my_vip_tags.addView(tlTitle);
                         //拉黑检测
                         relationship = (String) XposedHelpers.getObjectField(userInfoEntity, "relationship");
+                        Log.w("BluedHook", "relationship" + relationship);
                         if (relationship != null && relationship.equals("8")) {
                             XposedHelpers.setObjectField(userInfoEntity, "relationship", "0");
                             Object userInfoFragmentNew = param.thisObject;

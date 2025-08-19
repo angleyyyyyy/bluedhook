@@ -163,6 +163,7 @@ public class ChatHook {
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                 XposedHelpers.callMethod(param.thisObject, "w");
                 Log.w(TAG, "广告拜拜之直接跳转");
+                ModuleTools.showToast("尝试跳过广告", Toast.LENGTH_LONG);
                 param.setResult(null);
             }
         });
@@ -175,6 +176,7 @@ public class ChatHook {
                 adList.clear();
                 XposedHelpers.callMethod(param.thisObject, "w");
                 Log.w(TAG, "广告拜拜之清空广告列表");
+                ModuleTools.showToast("尝试跳过广告", Toast.LENGTH_LONG);
             }
         });
 
@@ -188,6 +190,7 @@ public class ChatHook {
                         Object listener = param.args[1];
                         XposedHelpers.callMethod(listener, "onAdLoaded");
                         Log.w(TAG, "广告拜拜载入完成就拜拜");
+                        ModuleTools.showToast("尝试跳过广告", Toast.LENGTH_LONG);
                         param.setResult(null);
                     }
                 });
