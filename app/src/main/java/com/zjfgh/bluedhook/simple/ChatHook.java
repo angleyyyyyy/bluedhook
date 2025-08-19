@@ -48,7 +48,7 @@ public class ChatHook {
     private WeakReference<TextView> tvRecallMsgRef;
     private WeakReference<TextView> tvScreenshotProtectionRef;
     private WeakReference<TextView> tvChatReadMsgRef;
-    private byte[] bytes;
+
     private static final String TAG = "BluedHook-ChatHook";
 
     private ChatHook(Context context, XModuleResources modRes) {
@@ -63,8 +63,6 @@ public class ChatHook {
         chatProtectScreenshotHook();
         testHook();
     }
-
-    private static final Random random = new Random();
 
     private void testHook() {
         XposedHelpers.findAndHookMethod("com.soft.blued.ui.setting.fragment.CollectionListFragment", classLoader, "a", "android.view.View", new XC_MethodHook() {
@@ -130,7 +128,7 @@ public class ChatHook {
                             try {
                                 JSONObject root = new JSONObject(response.body().string());
                                 String en_data = root.getString("en_data");
-                                JSONObject jsonObject = new JSONObject(ModuleTools.enDataDecrypt(en_data, bytes));
+                                JSONObject jsonObject = new JSONObject(ModuleTools.enDataDecrypt(en_data, AppContainer.getInstance().getBytes()));
                                 JSONArray dataArr = jsonObject.getJSONArray("data");
                                 if (dataArr != null) {
                                     v.post(() -> adapter.updateData(dataArr));
@@ -149,7 +147,7 @@ public class ChatHook {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                 super.beforeHookedMethod(param);
-                bytes = (byte[]) param.args[1];
+                AppContainer.getInstance().setBytes((byte[]) param.args[1]);
             }
 
             @Override
@@ -157,79 +155,42 @@ public class ChatHook {
                 super.afterHookedMethod(param);
             }
         });
-        XposedHelpers.findAndHookMethod(
+        Class<?> splashFragment = XposedHelpers.findClass(
                 "com.soft.blued.ui.welcome.SerialSplashFragment",
-                classLoader,
-                "d", String.class,
+                classLoader);
+        XposedHelpers.findAndHookMethod(splashFragment, "d", String.class, new XC_MethodHook() {
+            @Override
+            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                XposedHelpers.callMethod(param.thisObject, "w");
+                Log.w(TAG, "广告拜拜之直接跳转");
+                param.setResult(null);
+            }
+        });
+
+        // 方法二：清空广告列表
+        XposedHelpers.findAndHookMethod(splashFragment, "z", new XC_MethodHook() {
+            @Override
+            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                List<?> adList = (List<?>) XposedHelpers.getObjectField(param.thisObject, "z");
+                adList.clear();
+                XposedHelpers.callMethod(param.thisObject, "w");
+                Log.w(TAG, "广告拜拜之清空广告列表");
+            }
+        });
+
+        // 方法三：拦截广告平台
+        XposedHelpers.findAndHookMethod(splashFragment, "g",
+                XposedHelpers.findClass("com.blued.android.module.common.login.model.BluedADExtra", classLoader),
+                XposedHelpers.findClass("com.soft.blued.ui.welcome.SerialSplashFragment$SplashAdListener", classLoader),
                 new XC_MethodHook() {
                     @Override
-                    protected void afterHookedMethod(MethodHookParam param) {
-                        Object fragment = param.thisObject;
-                        // 1. 动态获取广告数据对象
-                        Object adExtra = XposedHelpers.getObjectField(fragment, "i"); // 广告数据字段名
-                        // 随机延迟 1-3秒（模拟用户观看）
-                        int delay = 1000 + random.nextInt(2000);
-                        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                            // 2. 先伪造曝光上报
-                            fakeAdExposure(adExtra);
-                            // 3. 按30%概率伪造点击
-                            if (random.nextFloat() < 0.3f) {
-                                fakeAdClick(adExtra);
-                            }
-                            // 4. 实际跳过广告
-                            XposedHelpers.callMethod(fragment, "w");
-                        }, delay);
-                        ModuleTools.showToast("已跳过开机广告", Toast.LENGTH_LONG);
+                    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                        Object listener = param.args[1];
+                        XposedHelpers.callMethod(listener, "onAdLoaded");
+                        Log.w(TAG, "广告拜拜载入完成就拜拜");
+                        param.setResult(null);
                     }
-                }
-        );
-    }
-
-    // 伪造曝光上报
-    private void fakeAdExposure(Object adExtra) {
-        try {
-            // 修改曝光时间戳为当前时间
-            Object coordinate = XposedHelpers.getObjectField(adExtra, "coordinate");
-            XposedHelpers.setObjectField(coordinate, "show_time", System.currentTimeMillis() + "");
-            XposedHelpers.setObjectField(coordinate, "post_show_time", System.currentTimeMillis() + "");
-            Object show_url = XposedHelpers.getObjectField(adExtra, "show_url");
-            // 触发上报逻辑（原始代码中的上报路径）
-            Class<?> FindHttpUtils = XposedHelpers.findClass(
-                    "com.soft.blued.http.FindHttpUtils",
-                    classLoader);
-            XposedHelpers.callStaticMethod(
-                    FindHttpUtils,
-                    "a",
-                    show_url,
-                    coordinate);
-            Log.d(TAG, "伪装曝光上报");
-        } catch (Exception e) {
-            Log.e(TAG, "伪装曝光上报程序异常:" + e);
-        }
-    }
-
-    // 伪造点击上报
-    private void fakeAdClick(Object adExtra) {
-        try {
-            // 随机生成点击坐标（模拟真实点击位置）
-            Object coordinate = XposedHelpers.getObjectField(adExtra, "coordinate");
-            XposedHelpers.setObjectField(coordinate, "down_x", random.nextInt(300) + "");
-            XposedHelpers.setObjectField(coordinate, "down_y", random.nextInt(500) + "");
-            XposedHelpers.setObjectField(coordinate, "click_time", System.currentTimeMillis() + "");
-            Object click_url = XposedHelpers.getObjectField(adExtra, "click_url");
-            // 触发点击上报
-            Class<?> FindHttpUtils = XposedHelpers.findClass(
-                    "com.soft.blued.http.FindHttpUtils",
-                    classLoader);
-            XposedHelpers.callStaticMethod(
-                    FindHttpUtils,
-                    "a",
-                    click_url,
-                    coordinate);
-            Log.d(TAG, "伪造点击上报");
-        } catch (Exception e) {
-            Log.e(TAG, "伪造点击上报程序异常:" + e);
-        }
+                });
     }
 
     // 获取单例实例（仍然保留单例，但内部使用 WeakReference）

@@ -593,8 +593,10 @@ public class PlayingOnLiveBaseModeFragmentHook {
                 if (lid <= 0 && settingItem.isSwitchOn()) {
                     Log.d("BluedHook", "直播ID为" + lid + "，拉取推荐直播数据");
                     Response response = NetworkManager.getInstance().get(NetworkManager.getUsersRecommendApi(), AuthManager.auHook(false, classLoader, appContextRef.get()));
+                    JSONObject root = new JSONObject(response.body().string());
+                    String en_data = root.getString("en_data");
+                    JSONObject jsonObject = new JSONObject(ModuleTools.enDataDecrypt(en_data, AppContainer.getInstance().getBytes()));
                     try {
-                        JSONObject jsonObject = new JSONObject(response.body().string());
                         int code = jsonObject.getInt("code");
                         if (code == 200) {
                             JSONArray data = jsonObject.getJSONArray("data");
@@ -830,7 +832,9 @@ public class PlayingOnLiveBaseModeFragmentHook {
             //从直播推荐列表获取新的直播间ID
             Response response = NetworkManager.getInstance().get(NetworkManager.getUsersRecommendApi(), AuthManager.auHook(false, classLoader, appContextRef.get()));
             assert response.body() != null;
-            JSONObject jsonObject = new JSONObject(response.body().string());
+            JSONObject root = new JSONObject(response.body().string());
+            String en_data = root.getString("en_data");
+            JSONObject jsonObject = new JSONObject(ModuleTools.enDataDecrypt(en_data, AppContainer.getInstance().getBytes()));
             int code = jsonObject.getInt("code");
             if (code == 200) {
                 Log.e("BluedHook", jsonObject.toString());
