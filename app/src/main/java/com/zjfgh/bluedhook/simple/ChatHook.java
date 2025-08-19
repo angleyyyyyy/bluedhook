@@ -1,23 +1,30 @@
 package com.zjfgh.bluedhook.simple;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import android.content.res.XModuleResources;
+import android.content.res.XmlResourceParser;
+import android.graphics.Color;
 import android.util.Log;
+import android.util.TypedValue;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.FrameLayout;
+import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 
@@ -37,6 +44,8 @@ public class ChatHook {
     private WeakReference<TextView> tvRecallMsgRef;
     private WeakReference<TextView> tvScreenshotProtectionRef;
     private WeakReference<TextView> tvChatReadMsgRef;
+    private byte[] bytes;
+    private static final String TAG = "BluedHook-ChatHook";
 
     private ChatHook(Context context, XModuleResources modRes) {
         this.contextRef = new WeakReference<>(context);
@@ -51,7 +60,6 @@ public class ChatHook {
         testHook();
     }
 
-    byte[] bytes;
 
     private void testHook() {
         XposedHelpers.findAndHookMethod("com.soft.blued.ui.setting.fragment.CollectionListFragment", classLoader, "a", "android.view.View", new XC_MethodHook() {
@@ -61,6 +69,7 @@ public class ChatHook {
 
             }
 
+            @SuppressLint("UseCompatLoadingForDrawables")
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                 super.afterHookedMethod(param);
@@ -70,33 +79,64 @@ public class ChatHook {
                 TextView textView = (TextView) XposedHelpers.callMethod(b, "findViewById", tv_collection_numId);
                 LinearLayout linearLayout = (LinearLayout) textView.getParent();
                 TextView textView1 = new TextView(getSafeContext().getApplicationContext());
-                textView.setPadding(ModuleTools.dpToPx(10), 0, 0, 0);
-                textView1.setText("查看收藏更多信息");
-                textView1.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        NetworkManager.getInstance().getAsync(NetworkManager.getUserCollectApi(), AuthManager.auHook(false, classLoader, contextRef.get()), new Callback() {
-                            @Override
-                            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                textView1.setPadding(ModuleTools.dpToPx(30), ModuleTools.dpToPx(10), ModuleTools.dpToPx(30), ModuleTools.dpToPx(10));
+                // 将dp值转换为像素值
+                int marginLeft = (int) TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_DIP,
+                        20,
+                        getSafeContext().getResources().getDisplayMetrics()
+                );
 
-                            }
-
-                            @Override
-                            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                                try {
-                                    JSONObject root = new JSONObject(response.body().string());
-                                    String publicKey = response.headers().get("x-bc-encode-server-public-key");
-                                    Log.w("BluedHook", "publicKey" + publicKey);
-                                    String en_data = root.getString("en_data");
-                                    Log.w("BluedHook-------", ModuleTools.enDataDecrypt(en_data, bytes));
-                                } catch (JSONException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            }
-                        });
-                    }
-                });
+                ViewGroup.MarginLayoutParams params = new ViewGroup.MarginLayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                );
+                params.setMargins(marginLeft, 0, marginLeft, 0);
+                textView1.setLayoutParams(params);
+                textView1.setText("查看收藏用户更多信息");
+                textView1.setTextColor(Color.parseColor("#00FFAA"));
+                textView1.setBackground(modRes.getDrawable(R.drawable.tech_level_bg, null));
                 linearLayout.addView(textView1);
+                textView1.setOnClickListener(v -> {
+                    Activity activity = (Activity) textView.getContext();
+                    LayoutInflater inflater = (LayoutInflater) textView.getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                    XmlResourceParser userMoreInfoListLayoutRes = modRes.getLayout(R.layout.user_more_info_tech_list_layout);
+                    LinearLayout userMoreInfoListLayout = (LinearLayout) inflater.inflate(userMoreInfoListLayoutRes, null, false);
+                    userMoreInfoListLayout.setBackground(modRes.getDrawable(R.drawable.bg_tech_space, null));
+                    CustomPopupWindow customPopupWindow = new CustomPopupWindow(activity, userMoreInfoListLayout, Color.parseColor("#FF0A121F"));
+                    customPopupWindow.setBackgroundDrawable(modRes.getDrawable(R.drawable.bg_tech_space, null));
+                    customPopupWindow.setAnimationStyle(android.R.style.Animation_Dialog);
+                    customPopupWindow.showAtCenter();
+                    LinearLayout recyclerViewLayout = userMoreInfoListLayout.findViewById(R.id.recyclerViewLayout);
+                    RecyclerView recyclerView = new RecyclerView(textView.getContext());
+                    recyclerViewLayout.addView(recyclerView);
+                    recyclerView.setLayoutManager(new LinearLayoutManager(textView.getContext()));
+                    TechUserAdapter adapter = new TechUserAdapter(new JSONArray(), textView.getContext(), modRes);
+                    recyclerView.setAdapter(adapter);
+                    NetworkManager.getInstance().getAsync(NetworkManager.getUserCollectApi(), AuthManager.auHook(false, classLoader, contextRef.get()), new Callback() {
+                        @Override
+                        public void onFailure(@NonNull Call call, @NonNull IOException e) {
+
+                        }
+
+                        @SuppressLint("UseCompatLoadingForDrawables")
+                        @Override
+                        public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                            try {
+                                JSONObject root = new JSONObject(response.body().string());
+                                String en_data = root.getString("en_data");
+                                JSONObject jsonObject = new JSONObject(ModuleTools.enDataDecrypt(en_data, bytes));
+                                JSONArray dataArr = jsonObject.getJSONArray("data");
+                                if (dataArr != null) {
+                                    v.post(() -> adapter.updateData(dataArr));
+                                }
+
+                            } catch (JSONException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    });
+                });
             }
         });
 
@@ -104,38 +144,7 @@ public class ChatHook {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                 super.beforeHookedMethod(param);
-                Log.w("BluedHook", "参数1" + param.args[0]);
                 bytes = (byte[]) param.args[1];
-                String text = new String(bytes, StandardCharsets.UTF_8);
-                Log.w("BluedHook", "参数2" + text);
-                Log.w("BluedHook", "参数3" + param.args[2]);
-            }
-
-            @Override
-            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                super.afterHookedMethod(param);
-            }
-        });
-        XposedHelpers.findAndHookMethod("com.blued.android.http.encode.utils.b", classLoader, "I111I1lI1I1", "java.lang.String", "okhttp3.Headers", "java.lang.String", new XC_MethodHook() {
-            @Override
-            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                super.beforeHookedMethod(param);
-                Log.w("BluedHook", "参数12---" + param.args[0]);
-                String publicKey = (String) XposedHelpers.callMethod(param.args[1], "get", "x-bc-encode-server-public-key");
-                Log.w("BluedHook", "参数22---" + publicKey);
-                Log.w("BluedHook", "参数32---" + param.args[2]);
-            }
-
-            @Override
-            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                super.afterHookedMethod(param);
-            }
-        });
-        XposedHelpers.findAndHookMethod("com.blued.android.http.encode.utils.b", classLoader, "IIllIlIIIII", new XC_MethodHook() {
-            @Override
-            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                super.beforeHookedMethod(param);
-                Log.w("BluedHook", "重新获取公钥");
             }
 
             @Override

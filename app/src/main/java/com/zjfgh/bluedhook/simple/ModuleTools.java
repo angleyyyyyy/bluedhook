@@ -32,6 +32,8 @@ import java.util.regex.Pattern;
 import de.robv.android.xposed.XposedHelpers;
 
 public class ModuleTools {
+    private static final String TAG = "BluedHook-ModuleTools";
+
     public static void showBluedToast(String text, ClassLoader classLoader) {
         if (classLoader != null) {
             Class<?> ToastUtils = XposedHelpers.findClass("com.blued.android.module.common.utils.ToastUtils", classLoader);
@@ -183,15 +185,16 @@ public class ModuleTools {
 
     public static String enDataDecrypt(String enData, byte[] bytes) {
         Class<?> encodeUtilsC = XposedHelpers.findClass("com.blued.android.http.encode.utils.c", AppContainer.getInstance().getClassLoader());
-        Class<?> bClass = XposedHelpers.findClass("com.blued.android.http.encode.utils.b", AppContainer.getInstance().getClassLoader());
-        Object IIllIlIIIII = XposedHelpers.getStaticObjectField(bClass, "IIllIlIIIII");
-        Object I111I1lI1I1 = XposedHelpers.callMethod(IIllIlIIIII, "I111I1lI1I1");
-        Log.w("BluedHook", "____>" + I111I1lI1I1);
-        Object l1l1l1l1 = XposedHelpers.callStaticMethod(encodeUtilsC, "I111I1lI1I1", I111I1lI1I1, new String(Base64.decode("", 0), StandardCharsets.UTF_8));
-        Log.w("BluedHook", "---->" + IIllIlIIIII);
-        Log.w("BluedHook", "-------->" + l1l1l1l1);
-        //byte[] bytes = c.I111I1lI1I1(IIllIlIIIII.I111I1lI1I1(), );
+        String decrypt = (String) XposedHelpers.callStaticMethod(encodeUtilsC, "I111I1lI1I1", enData, bytes, "https://social.irisgw.cn/users/collect/list?uid=104121534&size=20&from=collect&page=1&sort=default");
+        Log.w(TAG, "en_data解密:" + decrypt);
+        return decrypt;
+    }
 
-        return (String) XposedHelpers.callStaticMethod(encodeUtilsC, "I111I1lI1I1", enData, bytes, "https://social.irisgw.cn/users/collect/list?uid=104121534&size=20&from=collect&page=1&sort=default");
+    public static String formatBeans(Double beansCount) {
+        Class<?> CommonStringUtils = XposedHelpers.findClass(
+                "com.blued.android.module.common.utils.CommonStringUtils",
+                AppContainer.getInstance().getClassLoader());
+        return (String) XposedHelpers.callStaticMethod(
+                CommonStringUtils, "e", String.valueOf(beansCount));
     }
 }
