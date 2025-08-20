@@ -8,8 +8,8 @@ android {
     defaultConfig {
         applicationId "com.zjfgh.bluedhook.simple"
         minSdk 26
-        versionCode 102052
-        versionName "1.2.5"
+        versionCode 102060
+        versionName "1.2.6"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         ndk {
             abiFilter("armeabi-v7a")

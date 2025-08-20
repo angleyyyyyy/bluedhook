@@ -118,6 +118,8 @@ public class BluedHook implements IXposedHookLoadPackage, IXposedHookInitPackage
                     LikeFollowModel.getInstance(bluedContext, AppContainer.getInstance().getModuleRes());
                     LiveMsgSendManagerHook.getInstance();
                     LiveMultiPKItemViewHook.getInstance(bluedContext, AppContainer.getInstance().getModuleRes());
+                    LiveRankHook.getInstance(bluedContext, AppContainer.getInstance().getModuleRes());
+                    LiveRankHook.getInstance(bluedContext, AppContainer.getInstance().getModuleRes());
                     wsServerManager = new WSServerManager(new WSServerManager.WSServerListener() {
                         @Override
                         public void onServerStarted(int port) {
