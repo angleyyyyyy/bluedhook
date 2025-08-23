@@ -30,6 +30,7 @@ public class SettingsViewCreator {
     public static final int SHIELD_LIKE = 6;
     public static final int AUTO_LIKE = 7;
     public static final int LIVE_AUTO_SEND_MSG = 8;
+    public static final int AUTO_ENTER_LIVE = 9;
 
     public SettingsViewCreator(Context context) {
         this.context = context;
@@ -38,9 +39,6 @@ public class SettingsViewCreator {
 
     @SuppressLint("UseCompatLoadingForDrawables")
     public View createSettingsView() {
-        // 初始化示例设置数据
-        initializeSettings();
-
         // 获取所有设置项
         List<SettingItem> settingsList = dbManager.getAllSettings();
 
@@ -143,74 +141,6 @@ public class SettingsViewCreator {
         return scrollView;
     }
 
-    private void initializeSettings() {
-        dbManager.addOrUpdateSetting(new SettingItem(USER_INFO_FRAGMENT_NEW_HOOK,
-                "个人主页信息扩展",
-                true,
-                "启用后个人主页将显示额外信息。",
-                "",
-                ""
-        ));
-
-        dbManager.addOrUpdateSetting(new SettingItem(ANCHOR_MONITOR_LIVE_HOOK,
-                "主播开播提醒监听",
-                true,
-                "开启后直播页右上角将会有\"检\"字图标，可进入开播提醒用户列表页面；注：如果需要使用此功能，请先打开\"个人主页信息扩展\"功能，方可看到主播主页的\"特别关注\"按钮，点击\"特别关注\"按钮即可将需要提醒的主播添加到主播监听列表。",
-                "",
-                ""
-        ));
-        dbManager.addOrUpdateSetting(new SettingItem(PLAYING_ON_LIVE_BASE_MODE_FRAGMENT_HOOK,
-                "直播间信息扩展",
-                true,
-                "开启后直播间将显示额外信息，例如：显示主播的总豆，显示其他用户隐藏的资料信息等功能。",
-                "",
-                ""
-        ));
-        dbManager.addOrUpdateSetting(new SettingItem(LIVE_JOIN_HIDE_HOOK,
-                "进入直播间隐身",
-                true,
-                "开启后进入直播间将会隐身；注：直播间送礼物后可能会看见你的头像，但每次进入直播间不会有任何提示。",
-                "",
-                ""
-        ));
-        dbManager.addOrUpdateSetting(new SettingItem(WS_SERVER,
-                "开启WS实时通讯",
-                false,
-                "需要配合ws客户端",
-                "7890",
-                "请输入端口号"
-        ));
-        dbManager.addOrUpdateSetting(new SettingItem(REC_HEW_HORN,
-                "记录飘屏",
-                false,
-                "记录抽奖飘屏",
-                "",
-                ""
-        ));
-        dbManager.addOrUpdateSetting(new SettingItem(SHIELD_LIKE,
-                "屏蔽点赞",
-                false,
-                "屏蔽直播间自己的点赞，以免误触导致主播看到你。\n" +
-                        "注：仅屏蔽发送过程，不会屏蔽本地点赞特效或震动",
-                "",
-                ""
-        ));
-        dbManager.addOrUpdateSetting(new SettingItem(AUTO_LIKE,
-                "直播间自动点赞",
-                false,
-                "进入直播间手动触发一次点赞后，会持续发送点赞消息。\n" +
-                        "注：使用此功能需先关闭屏蔽点赞开关，如需停止自动点赞，请退出直播间或关闭小窗。",
-                "",
-                ""
-        ));
-        dbManager.addOrUpdateSetting(new SettingItem(LIVE_AUTO_SEND_MSG,
-                "直播间定时发送消息",
-                false,
-                "在直播间自动发送消息",
-                "欢迎各位进入直播间",
-                "请输入需要发送的消息内容。"
-        ));
-    }
 
     // 定义Switch状态变化的回调接口
     public interface OnSwitchCheckedChangeListener {

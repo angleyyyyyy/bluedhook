@@ -13,6 +13,7 @@ import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -66,12 +67,6 @@ public class ChatHook {
 
     private void testHook() {
         XposedHelpers.findAndHookMethod("com.soft.blued.ui.setting.fragment.CollectionListFragment", classLoader, "a", "android.view.View", new XC_MethodHook() {
-            @Override
-            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                super.beforeHookedMethod(param);
-
-            }
-
             @SuppressLint("UseCompatLoadingForDrawables")
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {

@@ -45,8 +45,26 @@ public class BluedHook implements IXposedHookLoadPackage, IXposedHookInitPackage
                 protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                     super.afterHookedMethod(param);
                     Context bluedContext = (Context) param.args[0];
+                    XModuleResources modRes = AppContainer.getInstance().getModuleRes();
+                    ClassLoader classLoader = bluedContext.getClassLoader();
                     AppContainer.getInstance().setBluedContext(bluedContext);
-                    AppContainer.getInstance().setClassLoader(bluedContext.getClassLoader());
+                    AppContainer.getInstance().setClassLoader(classLoader);
+                    initializeSettings();
+                    NetworkManager.getInstance();
+                    UserInfoFragmentNewHook.getInstance(bluedContext, modRes);
+                    LiveHook.getInstance(bluedContext);
+                    PlayingOnLiveBaseModeFragmentHook.getInstance(bluedContext, modRes);
+                    FragmentMineNewBindingHook.getInstance(bluedContext, modRes);
+                    LiveMultiBoyItemViewHook.getInstance();
+                    ChatHook.getInstance(bluedContext, modRes);
+                    NearbyPeopleFragment_ViewBindingHook.getInstance(bluedContext, classLoader);
+                    HornViewNewHook.autoHornViewNew();
+                    LikeFollowModel.getInstance(bluedContext, modRes);
+                    LiveMsgSendManagerHook.getInstance();
+                    LiveMultiPKItemViewHook.getInstance(bluedContext, modRes);
+                    LiveRankHook.getInstance(bluedContext, modRes);
+                    LiveRankHook.getInstance(bluedContext, modRes);
+                    LiveGuestFinishDlgFragmentHook.getInstance(bluedContext, modRes);
                     Toast.makeText(bluedContext, "外挂成功！", Toast.LENGTH_LONG).show();
                     try {
                         VoiceTTS.getInstance(bluedContext);
@@ -94,7 +112,6 @@ public class BluedHook implements IXposedHookLoadPackage, IXposedHookInitPackage
                                 }
                             }
                     );
-                    NetworkManager.getInstance();
                     String jinShanApiStr = FileStorageHelper.readFileFromInternalStorage(
                             AppContainer.getInstance().getBluedContext(),
                             "JinShanApi.txt");
@@ -107,19 +124,6 @@ public class BluedHook implements IXposedHookLoadPackage, IXposedHookInitPackage
                             ModuleTools.showBluedToast("金山云文档接口配置读取失败\n开播提醒云端数据无法保存");
                         }
                     }
-                    UserInfoFragmentNewHook.getInstance(bluedContext, AppContainer.getInstance().getModuleRes());
-                    LiveHook.getInstance(bluedContext);
-                    PlayingOnLiveBaseModeFragmentHook.getInstance(bluedContext, AppContainer.getInstance().getModuleRes());
-                    FragmentMineNewBindingHook.getInstance(bluedContext, AppContainer.getInstance().getModuleRes());
-                    LiveMultiBoyItemViewHook.getInstance();
-                    ChatHook.getInstance(bluedContext, AppContainer.getInstance().getModuleRes());
-                    NearbyPeopleFragment_ViewBindingHook.getInstance(AppContainer.getInstance().getBluedContext(), AppContainer.getInstance().getClassLoader());
-                    HornViewNewHook.autoHornViewNew();
-                    LikeFollowModel.getInstance(bluedContext, AppContainer.getInstance().getModuleRes());
-                    LiveMsgSendManagerHook.getInstance();
-                    LiveMultiPKItemViewHook.getInstance(bluedContext, AppContainer.getInstance().getModuleRes());
-                    LiveRankHook.getInstance(bluedContext, AppContainer.getInstance().getModuleRes());
-                    LiveRankHook.getInstance(bluedContext, AppContainer.getInstance().getModuleRes());
                     wsServerManager = new WSServerManager(new WSServerManager.WSServerListener() {
                         @Override
                         public void onServerStarted(int port) {
@@ -236,5 +240,82 @@ public class BluedHook implements IXposedHookLoadPackage, IXposedHookInitPackage
     @Override
     public void initZygote(StartupParam startupParam) {
         AppContainer.getInstance().setModulePath(startupParam.modulePath);
+    }
+
+    private void initializeSettings() {
+        SQLiteManagement dbManager = SQLiteManagement.getInstance();
+        dbManager.addOrUpdateSetting(new SettingItem(SettingsViewCreator.USER_INFO_FRAGMENT_NEW_HOOK,
+                "个人主页信息扩展",
+                true,
+                "启用后个人主页将显示额外信息。",
+                "",
+                ""
+        ));
+
+        dbManager.addOrUpdateSetting(new SettingItem(SettingsViewCreator.ANCHOR_MONITOR_LIVE_HOOK,
+                "主播开播提醒监听",
+                true,
+                "开启后直播页右上角将会有\"检\"字图标，可进入开播提醒用户列表页面；注：如果需要使用此功能，请先打开\"个人主页信息扩展\"功能，方可看到主播主页的\"特别关注\"按钮，点击\"特别关注\"按钮即可将需要提醒的主播添加到主播监听列表。",
+                "",
+                ""
+        ));
+        dbManager.addOrUpdateSetting(new SettingItem(SettingsViewCreator.PLAYING_ON_LIVE_BASE_MODE_FRAGMENT_HOOK,
+                "直播间信息扩展",
+                true,
+                "开启后直播间将显示额外信息，例如：显示主播的总豆，显示其他用户隐藏的资料信息等功能。",
+                "",
+                ""
+        ));
+        dbManager.addOrUpdateSetting(new SettingItem(SettingsViewCreator.LIVE_JOIN_HIDE_HOOK,
+                "进入直播间隐身",
+                true,
+                "开启后进入直播间将会隐身；注：直播间送礼物后可能会看见你的头像，但每次进入直播间不会有任何提示。",
+                "",
+                ""
+        ));
+        dbManager.addOrUpdateSetting(new SettingItem(SettingsViewCreator.WS_SERVER,
+                "开启WS实时通讯",
+                false,
+                "需要配合ws客户端",
+                "7890",
+                "请输入端口号"
+        ));
+        dbManager.addOrUpdateSetting(new SettingItem(SettingsViewCreator.REC_HEW_HORN,
+                "记录飘屏",
+                false,
+                "记录抽奖飘屏",
+                "",
+                ""
+        ));
+        dbManager.addOrUpdateSetting(new SettingItem(SettingsViewCreator.SHIELD_LIKE,
+                "屏蔽点赞",
+                false,
+                "屏蔽直播间自己的点赞，以免误触导致主播看到你。\n" +
+                        "注：仅屏蔽发送过程，不会屏蔽本地点赞特效或震动",
+                "",
+                ""
+        ));
+        dbManager.addOrUpdateSetting(new SettingItem(SettingsViewCreator.AUTO_LIKE,
+                "直播间自动点赞",
+                false,
+                "进入直播间手动触发一次点赞后，会持续发送点赞消息。\n" +
+                        "注：使用此功能需先关闭屏蔽点赞开关，如需停止自动点赞，请退出直播间或关闭小窗。",
+                "",
+                ""
+        ));
+        dbManager.addOrUpdateSetting(new SettingItem(SettingsViewCreator.LIVE_AUTO_SEND_MSG,
+                "直播间定时发送消息",
+                false,
+                "在直播间自动发送消息",
+                "欢迎各位进入直播间",
+                "请输入需要发送的消息内容。"
+        ));
+        dbManager.addOrUpdateSetting(new SettingItem(SettingsViewCreator.AUTO_ENTER_LIVE,
+                "直播结束自动跳转推荐直播间",
+                false,
+                "开启后当直播结束时，默认会自动进入其他直播间（官方功能）。\n关闭后，将不会自动跳转（适合夜间边听边挂机）",
+                "",
+                ""
+        ));
     }
 }

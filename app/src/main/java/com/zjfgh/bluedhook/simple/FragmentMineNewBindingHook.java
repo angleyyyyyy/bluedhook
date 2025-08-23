@@ -75,21 +75,21 @@ public class FragmentMineNewBindingHook {
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                 super.afterHookedMethod(param);
-                View view = (View) param.args[0];
-                @SuppressLint("DiscouragedApi")
-                int ll_liveID = getSafeContext().getResources().getIdentifier("ll_live", "id", getSafeContext().getPackageName());
-                LinearLayout ll_live = view.findViewById(ll_liveID);
-                LayoutInflater inflater = (LayoutInflater) ll_live.getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                XmlResourceParser anchorFansOpenLayoutRes = modRes.getLayout(R.layout.anchor_fans_open_layout);
-                LinearLayout anchorFansOpenLayout = (LinearLayout) inflater.inflate(anchorFansOpenLayoutRes, null, false);
-                // 创建一个GradientDrawable对象
-                LinearLayout ll_ygb_give = anchorFansOpenLayout.findViewById(R.id.ll_ygb_give);
-                ll_ygb_give.setBackground(modRes.getDrawable(R.drawable.anchor_fans_open_item_bg, null));
-                LinearLayout ll_data_analyzer = anchorFansOpenLayout.findViewById(R.id.ll_data_analyzer);
-                ll_data_analyzer.setBackground(modRes.getDrawable(R.drawable.anchor_fans_open_item_bg, null));
-                ll_live.addView(anchorFansOpenLayout, 1);
-                ll_ygb_give.setOnClickListener(setToastTgbListener());
-                ll_data_analyzer.setOnClickListener(openDataAnalyzerView());
+//                View view = (View) param.args[0];
+//                @SuppressLint("DiscouragedApi")
+//                int ll_liveID = getSafeContext().getResources().getIdentifier("ll_live", "id", getSafeContext().getPackageName());
+//                LinearLayout ll_live = view.findViewById(ll_liveID);
+//                LayoutInflater inflater = (LayoutInflater) ll_live.getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+//                XmlResourceParser anchorFansOpenLayoutRes = modRes.getLayout(R.layout.anchor_fans_open_layout);
+//                LinearLayout anchorFansOpenLayout = (LinearLayout) inflater.inflate(anchorFansOpenLayoutRes, null, false);
+//                // 创建一个GradientDrawable对象
+//                LinearLayout ll_ygb_give = anchorFansOpenLayout.findViewById(R.id.ll_ygb_give);
+//                ll_ygb_give.setBackground(modRes.getDrawable(R.drawable.anchor_fans_open_item_bg, null));
+//                LinearLayout ll_data_analyzer = anchorFansOpenLayout.findViewById(R.id.ll_data_analyzer);
+//                ll_data_analyzer.setBackground(modRes.getDrawable(R.drawable.anchor_fans_open_item_bg, null));
+//                ll_live.addView(anchorFansOpenLayout, 1);
+//                ll_ygb_give.setOnClickListener(setToastTgbListener());
+//                ll_data_analyzer.setOnClickListener(openDataAnalyzerView());
             }
         });
     }
