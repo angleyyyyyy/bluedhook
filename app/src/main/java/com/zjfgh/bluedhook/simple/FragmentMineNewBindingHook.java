@@ -14,7 +14,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -26,12 +25,12 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedHelpers;
-import okhttp3.Call;
-import okhttp3.Callback;
 import okhttp3.Response;
 
 public class FragmentMineNewBindingHook {
@@ -75,21 +74,21 @@ public class FragmentMineNewBindingHook {
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                 super.afterHookedMethod(param);
-//                View view = (View) param.args[0];
-//                @SuppressLint("DiscouragedApi")
-//                int ll_liveID = getSafeContext().getResources().getIdentifier("ll_live", "id", getSafeContext().getPackageName());
-//                LinearLayout ll_live = view.findViewById(ll_liveID);
-//                LayoutInflater inflater = (LayoutInflater) ll_live.getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-//                XmlResourceParser anchorFansOpenLayoutRes = modRes.getLayout(R.layout.anchor_fans_open_layout);
-//                LinearLayout anchorFansOpenLayout = (LinearLayout) inflater.inflate(anchorFansOpenLayoutRes, null, false);
-//                // 创建一个GradientDrawable对象
-//                LinearLayout ll_ygb_give = anchorFansOpenLayout.findViewById(R.id.ll_ygb_give);
-//                ll_ygb_give.setBackground(modRes.getDrawable(R.drawable.anchor_fans_open_item_bg, null));
-//                LinearLayout ll_data_analyzer = anchorFansOpenLayout.findViewById(R.id.ll_data_analyzer);
-//                ll_data_analyzer.setBackground(modRes.getDrawable(R.drawable.anchor_fans_open_item_bg, null));
-//                ll_live.addView(anchorFansOpenLayout, 1);
-//                ll_ygb_give.setOnClickListener(setToastTgbListener());
-//                ll_data_analyzer.setOnClickListener(openDataAnalyzerView());
+                View view = (View) param.args[0];
+                @SuppressLint("DiscouragedApi")
+                int ll_liveID = getSafeContext().getResources().getIdentifier("ll_live", "id", getSafeContext().getPackageName());
+                LinearLayout ll_live = view.findViewById(ll_liveID);
+                LayoutInflater inflater = (LayoutInflater) ll_live.getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                XmlResourceParser anchorFansOpenLayoutRes = modRes.getLayout(R.layout.anchor_fans_open_layout);
+                LinearLayout anchorFansOpenLayout = (LinearLayout) inflater.inflate(anchorFansOpenLayoutRes, null, false);
+                // 创建一个GradientDrawable对象
+                LinearLayout ll_ygb_give = anchorFansOpenLayout.findViewById(R.id.ll_ygb_give);
+                ll_ygb_give.setBackground(modRes.getDrawable(R.drawable.anchor_fans_open_item_bg, null));
+                LinearLayout ll_data_analyzer = anchorFansOpenLayout.findViewById(R.id.ll_data_analyzer);
+                ll_data_analyzer.setBackground(modRes.getDrawable(R.drawable.anchor_fans_open_item_bg, null));
+                ll_live.addView(anchorFansOpenLayout, 1);
+                ll_ygb_give.setOnClickListener(setToastTgbListener());
+                ll_data_analyzer.setOnClickListener(openDataAnalyzerView());
             }
         });
     }
@@ -107,7 +106,7 @@ public class FragmentMineNewBindingHook {
         };
     }
 
-    @SuppressLint("UseCompatLoadingForDrawables")
+    @SuppressLint({"UseCompatLoadingForDrawables", "SetTextI18n"})
     private View.OnClickListener setToastTgbListener() {
         return v -> {
             Activity activity = (Activity) v.getContext();
@@ -136,10 +135,15 @@ public class FragmentMineNewBindingHook {
             AnchorFansListAdapter adapter = new AnchorFansListAdapter(v.getContext(), anchorFansList, modRes);
             recyclerView.setAdapter(adapter);
             recyclerView.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-            @SuppressLint({"SetTextI18n", "NotifyDataSetChanged"}) Thread thread = new Thread(() -> {
+            @SuppressLint({"SetTextI18n", "NotifyDataSetChanged"})
+            // 创建线程池（建议使用单例模式管理线程池）
+            ExecutorService executor = Executors.newCachedThreadPool(); // 或者使用固定大小的线程池
+
+            executor.execute(() -> {
                 final int[] page = {1};
                 final int[] hasMore = {1};
                 final int[] joinFansCount = {0, 0};
+                final int[] itemCount = {0};
                 while (hasMore[0] != 0) {
                     try {
                         Response response = NetworkManager.getInstance().get(NetworkManager.getBluedAnchorFansAPI(page[0]), AuthManager.fetchAuthHeaders(classLoader));
@@ -149,6 +153,7 @@ public class FragmentMineNewBindingHook {
                         JSONArray dataArr = rootObj.getJSONArray("data");
                         int dataCount = dataArr.length();
                         hasMore[0] = dataCount;
+
                         for (int i = 0; i < dataCount; i++) {
                             JSONObject dataI = (JSONObject) dataArr.get(i);
                             AnchorFansListAdapter.AnchorFansListBean anchorFansListBean = new AnchorFansListAdapter.AnchorFansListBean();
@@ -163,79 +168,102 @@ public class FragmentMineNewBindingHook {
                             anchorFansListBean.relation_limit = dataI.getInt("relation_limit");
                             anchorFansListBean.relation_today = dataI.getInt("relation_today");
                             anchorFansListBean.gift_count = dataI.getInt("gift_count");
+
                             anchorFansList.add(anchorFansListBean);
                             joinFansCount[0]++;
                             if (page[0] == 1 && i == 0) {
                                 joinFansCount[1] = anchorFansListBean.gift_count;
                             }
+                            itemCount[0]++;
                         }
+
                         page[0]++;
                         v.post(() -> {
-                            adapter.notifyDataSetChanged();
-                            v.post(() -> {
-                                anchorFansJoinCount.setText("已加入粉丝团" + joinFansCount[0] + "个，预计可领取" + (joinFansCount[1] * joinFansCount[0]) + "根荧光棒");
-                            });
+                            adapter.notifyItemChanged(itemCount[0]);
+                            v.post(() -> anchorFansJoinCount.setText("已加入粉丝团" + joinFansCount[0] + "个，预计可领取" + (joinFansCount[1] * joinFansCount[0]) + "根荧光棒"));
                         });
-                        Thread.sleep(200);
+                        TimeUnit.MILLISECONDS.sleep(200);
+
                     } catch (IOException | JSONException | InterruptedException e) {
-                        v.post(() -> {
-                            Toast.makeText(getSafeContext(), "JSONException = " + e, Toast.LENGTH_LONG).show();
-                        });
+                        v.post(() -> Toast.makeText(getSafeContext(), "JSONException = " + e, Toast.LENGTH_LONG).show());
                     }
                 }
+
                 v.post(() -> {
                     giveYbgButton.setText("领取荧光棒");
                     giveYbgButton.setEnabled(true);
                 });
-
             });
-            thread.start();
 
             giveYbgButton.setOnClickListener(view2 -> {
-                Thread thread1 = new Thread(() -> {
-                    try {
-                        for (int i = 0; i < anchorFansList.size(); i++) {
-                            AnchorFansListAdapter.AnchorFansListBean anchorFansListBean = anchorFansList.get(i);
-                            String json = new JSONObject()
-                                    .put("anchor", String.valueOf(anchorFansListBean.anchor))
-                                    .toString();
-
-                            Response response = NetworkManager.getInstance().post(NetworkManager.getAnchorFansFreeGoodsAPI(), json, AuthManager.fetchAuthHeaders(classLoader));
-                            assert response.body() != null;
-                            String responseStr = response.body().string();
-                            JSONObject jsonObject = new JSONObject(responseStr);
-                            JSONArray data = jsonObject.getJSONArray("data");
-                            JSONObject object = data.getJSONObject(0);
-                            int giftCount = 0;
-                            if (object.has("gift_count")) {
-                                giftCount = object.getInt("gift_count");
-                            }
-                            String message = object.getString("message");
-                            anchorFansListBean.status = 1;
-                            anchorFansListBean.gift_count = giftCount;
-                            anchorFansListBean.message = message;
-                            int finalI = i;
-                            v.post(() -> {
-                                adapter.notifyItemChanged(finalI);
-                            });
-                            Thread.sleep(100);
-                        }
-                        v.post(() -> {
-                            giveYbgButton.setText("领取荧光棒");
-                            giveYbgButton.setEnabled(true);
-                        });
-                    } catch (Exception e) {
-                        v.post(() -> {
-                            giveYbgButton.setText("领取荧光棒");
-                            giveYbgButton.setEnabled(true);
-                        });
-                    }
-                });
                 String giveYbgButtonStr = giveYbgButton.getText().toString();
                 if (giveYbgButtonStr.equals("领取荧光棒")) {
                     giveYbgButton.setText("领取中...");
                     giveYbgButton.setEnabled(false);
-                    thread1.start();
+                    // 使用线程池而不是直接创建线程
+                    ExecutorService executor1 = Executors.newSingleThreadExecutor();
+                    executor1.execute(() -> {
+                        try {
+                            for (int i = 0; i < anchorFansList.size(); i++) {
+                                AnchorFansListAdapter.AnchorFansListBean anchorFansListBean = anchorFansList.get(i);
+
+                                // 执行网络请求
+                                String json = new JSONObject()
+                                        .put("anchor", String.valueOf(anchorFansListBean.anchor))
+                                        .toString();
+
+                                Response response = NetworkManager.getInstance().post(
+                                        NetworkManager.getAnchorFansFreeGoodsAPI(),
+                                        json,
+                                        AuthManager.fetchAuthHeaders(classLoader)
+                                );
+
+                                assert response.body() != null;
+                                String responseStr = response.body().string();
+                                JSONObject jsonObject = new JSONObject(responseStr);
+                                JSONArray data = jsonObject.getJSONArray("data");
+                                JSONObject object = data.getJSONObject(0);
+
+                                int giftCount = 0;
+                                if (object.has("gift_count")) {
+                                    giftCount = object.getInt("gift_count");
+                                }
+                                String message = object.getString("message");
+
+                                anchorFansListBean.status = 1;
+                                anchorFansListBean.gift_count = giftCount;
+                                anchorFansListBean.message = message;
+
+                                // 更新UI
+                                int finalI = i;
+                                v.post(() -> adapter.notifyItemChanged(finalI));
+
+                                // 使用更合理的延迟方式 - 只在需要时延迟
+                                if (i < anchorFansList.size() - 1) {
+                                    // 使用ScheduledExecutorService进行精确延迟
+                                    try {
+                                        TimeUnit.MILLISECONDS.sleep(100);
+                                    } catch (InterruptedException e) {
+                                        Thread.currentThread().interrupt();
+                                        break;
+                                    }
+                                }
+                            }
+
+                            v.post(() -> {
+                                giveYbgButton.setText("领取荧光棒");
+                                giveYbgButton.setEnabled(true);
+                            });
+
+                        } catch (Exception e) {
+                            v.post(() -> {
+                                giveYbgButton.setText("领取荧光棒");
+                                giveYbgButton.setEnabled(true);
+                            });
+                        } finally {
+                            executor.shutdown();
+                        }
+                    });
                 }
             });
             LinearLayout anchorFansListview = anchorFansListLayout.findViewById(R.id.anchor_fans_listview);

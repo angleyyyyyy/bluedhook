@@ -16,8 +16,6 @@ import android.widget.TextView;
 
 import java.util.List;
 
-import de.robv.android.xposed.XposedHelpers;
-
 public class SettingsViewCreator {
     private final SQLiteManagement dbManager;
     private final Context context;

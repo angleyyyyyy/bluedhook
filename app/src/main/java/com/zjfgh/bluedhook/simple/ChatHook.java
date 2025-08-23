@@ -6,14 +6,11 @@ import android.content.Context;
 import android.content.res.XModuleResources;
 import android.content.res.XmlResourceParser;
 import android.graphics.Color;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -28,10 +25,8 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Objects;
-import java.util.Random;
 
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedHelpers;
@@ -155,7 +150,7 @@ public class ChatHook {
                 classLoader);
         XposedHelpers.findAndHookMethod(splashFragment, "d", String.class, new XC_MethodHook() {
             @Override
-            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+            protected void beforeHookedMethod(MethodHookParam param) {
                 XposedHelpers.callMethod(param.thisObject, "w");
                 Log.w(TAG, "广告拜拜之直接跳转");
                 ModuleTools.showToast("尝试跳过广告", Toast.LENGTH_LONG);
@@ -166,7 +161,7 @@ public class ChatHook {
         // 方法二：清空广告列表
         XposedHelpers.findAndHookMethod(splashFragment, "z", new XC_MethodHook() {
             @Override
-            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+            protected void beforeHookedMethod(MethodHookParam param) {
                 List<?> adList = (List<?>) XposedHelpers.getObjectField(param.thisObject, "z");
                 adList.clear();
                 XposedHelpers.callMethod(param.thisObject, "w");
@@ -181,7 +176,7 @@ public class ChatHook {
                 XposedHelpers.findClass("com.soft.blued.ui.welcome.SerialSplashFragment$SplashAdListener", classLoader),
                 new XC_MethodHook() {
                     @Override
-                    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                    protected void beforeHookedMethod(MethodHookParam param) {
                         Object listener = param.args[1];
                         XposedHelpers.callMethod(listener, "onAdLoaded");
                         Log.w(TAG, "广告拜拜载入完成就拜拜");
