@@ -3,10 +3,10 @@ package com.zjfgh.bluedhook.simple;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.XModuleResources;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.text.Html;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -65,11 +65,11 @@ public class PlayingOnLiveBaseModeFragmentHook {
         anchorBeansHook();
         liveMultiBoyItemModelHook();
         watchingAnchorHook();
-        liveMsgHandlerHook();
         grpcMsgSenderHook();
         SendLikeSafeIntervalExecutor();
         startTimer();
         LiveSendMsgSafeIntervalExecutor();
+        LiveMsgContentManagerHook();
     }
 
     // 获取单例实例
@@ -161,8 +161,11 @@ public class PlayingOnLiveBaseModeFragmentHook {
                         TextView textView = view.findViewById(id);
                         if (textView1Ref == null) {
                             textView1Ref = new WeakReference<>(textView);
-                            @SuppressLint("DiscouragedApi") int live_msg_listID = appContextRef.get().getResources().getIdentifier("live_msg_list", "id",
-                                    appContextRef.get().getPackageName());
+                            @SuppressLint("DiscouragedApi")
+                            int live_msg_listID = appContextRef.get()
+                                    .getResources()
+                                    .getIdentifier("live_msg_list", "id",
+                                            appContextRef.get().getPackageName());
                             liveMsgListRef = new WeakReference<>(view.findViewById(live_msg_listID));
                             LayoutInflater inflater = (LayoutInflater) appContextRef.get().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                             View llLiveGiftTips = inflater.inflate(modRes.getLayout(R.layout.live_gift_tips), null, true);
@@ -171,9 +174,11 @@ public class PlayingOnLiveBaseModeFragmentHook {
                             LinearLayout ll_gift_tips = llLiveGiftTips.findViewById(R.id.ll_gift_tips);
                             ll_gift_tips.setBackground(modRes.getDrawable(R.drawable.bg_zise_tag, null));
                             liveMsgListRef.get().addView(llLiveGiftTips, 0);
-                            @SuppressLint("DiscouragedApi") int rl_top_info_rootID = appContextRef.get().getResources().getIdentifier("rl_top_info_root", "id", appContextRef.get().getPackageName());
+                            @SuppressLint("DiscouragedApi")
+                            int rl_top_info_rootID = appContextRef.get().getResources().getIdentifier("rl_top_info_root", "id", appContextRef.get().getPackageName());
                             ViewGroup rl_top_info_root = view.findViewById(rl_top_info_rootID);
-                            @SuppressLint("DiscouragedApi") int live_operation_viewID = appContextRef.get().getResources().getIdentifier("live_operation_view", "id", appContextRef.get().getPackageName());
+                            @SuppressLint("DiscouragedApi")
+                            int live_operation_viewID = appContextRef.get().getResources().getIdentifier("live_operation_view", "id", appContextRef.get().getPackageName());
                             TagLayout firstTg = new TagLayout(appContextRef.get());
                             firstTg.setPadding(0, ModuleTools.dpToPx(10), 0, 0);
                             firstTg.setFirstMarginStartSize(10);
@@ -374,65 +379,6 @@ public class PlayingOnLiveBaseModeFragmentHook {
             }
         });
 
-    }
-
-    private void liveMsgHandlerHook() {
-        Class<?> LiveChattingModelClass = XposedHelpers.findClass("com.blued.android.module.live_china.model.LiveChattingModel", classLoader);
-        XposedHelpers.findAndHookMethod("com.blued.android.module.live_china.msg.LiveMsgHandler", classLoader, "a", LiveChattingModelClass, new XC_MethodHook() {
-            @SuppressLint("SetTextI18n")
-            @Override
-            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                super.beforeHookedMethod(param);
-                Object liveChattingModel = param.args[0];
-                short msgType = XposedHelpers.getShortField(liveChattingModel, "msgType");
-                String msgExtra = (String) XposedHelpers.callMethod(liveChattingModel, "getMsgExtra");
-                String fromNickName = (String) XposedHelpers.getObjectField(liveChattingModel, "fromNickName");
-                Log.e("Blued", "msgType = " + msgType + "|fromNickName = " + fromNickName + "|msgExtra = " + msgExtra);
-                if (msgType == 33 || msgType == 289) {
-                    XposedHelpers.setShortField(liveChattingModel, "msgType", (short) 11001);
-                    LiveChattingModelMsgExtra msgExtraObj = JSON.parseObject(msgExtra, LiveChattingModelMsgExtra.class);
-                    String giftName = msgExtraObj.getGiftModel().getName();
-                    String receiverName = msgExtraObj.getGiftModel().getReceiverName();
-                    int giftCount = msgExtraObj.getGiftModel().getCount();
-                    String giftIcon = msgExtraObj.getGiftModel().getImagesStatic();
-                    // 取消之前的隐藏任务
-                    mHideHandler.removeCallbacks(mHideRunnable);
-                    // 显示礼物图标
-                    if (llLiveGiftTipsRef.get() != null) {
-                        llLiveGiftTipsRef.get().setVisibility(View.VISIBLE);
-                        TextView tvGiftTips = llLiveGiftTipsRef.get().findViewById(R.id.tv_gift_tips);
-                        ImageView ivGiftIcon = llLiveGiftTipsRef.get().findViewById(R.id.iv_gift_icon);
-                        Glide.with(appContextRef.get())
-                                .load(giftIcon) // 可以是URL、资源ID、文件等
-                                .placeholder(0) // 加载中显示
-                                .error(0) // 加载失败显示
-                                .centerCrop() // 图片裁剪方式
-                                .into(ivGiftIcon); // 目标ImageView
-                        String htmlText = "<font color='#4BD9ED'>" + fromNickName + " 送</font>" +
-                                "<font color='#F8CC53'> " + receiverName + " </font>" +
-                                "<font color='#4BD9ED'>" + giftName + "</font>" +
-                                "<font color='#F8CC53'> x " + giftCount + "</font>";
-                        // 初始状态：在屏幕外（Y = 自身高度，即完全在屏幕下方）
-                        tvGiftTips.setTranslationY(tvGiftTips.getHeight());
-                        tvGiftTips.setAlpha(0f); // 初始透明
-                        tvGiftTips.setText(Html.fromHtml(htmlText, Html.FROM_HTML_MODE_LEGACY));
-                        // 执行动画：滑入 + 渐显
-                        tvGiftTips.animate()
-                                .translationY(0f)  // 回到Y=0（正常位置）
-                                .alpha(1f)         // 渐显
-                                .setDuration(600)
-                                .setInterpolator(new DecelerateInterpolator())
-                                .start();
-                    }
-                    mHideHandler.postDelayed(mHideRunnable, 5000);
-                }
-            }
-
-            @Override
-            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                super.afterHookedMethod(param);
-            }
-        });
     }
 
     private Object bluedUIHttpResponse;
@@ -710,23 +656,21 @@ public class PlayingOnLiveBaseModeFragmentHook {
                 Object liveRoomUserModel = XposedHelpers.getObjectField(userCardDialogFragment, "m");
                 String relationship = (String) XposedHelpers.getObjectField(liveRoomUserModel, "relationship");
                 if (relationship.equals("8")) {
-                    XposedHelpers.setObjectField(liveRoomUserModel, "relationship", "0");
-                    TextView tv_attentionView = getTextView(userCardDialogFragment);
-                    tv_attentionView.setText("此用户已将你拉黑");
+                    TextView textView = getTextView(userCardDialogFragment);
+                    textView.setText("此用户已将你拉黑，可访问主页，无法关注");
+                    textView.setTextColor(Color.RED);
                 }
-                Log.w("BluedHook", "解除拉黑程序");
             }
 
-            @NonNull
             private TextView getTextView(Object userCardDialogFragment) {
                 Object layoutUserCardDialogBinding = XposedHelpers.callMethod(userCardDialogFragment, "u");
-                View J = (View) XposedHelpers.getObjectField(layoutUserCardDialogBinding, "J");
-                View r = (View) XposedHelpers.getObjectField(layoutUserCardDialogBinding, "r");
-                View G = (View) XposedHelpers.getObjectField(layoutUserCardDialogBinding, "G");
-                J.setVisibility(View.VISIBLE);
-                r.setVisibility(View.VISIBLE);
-                G.setVisibility(View.VISIBLE);
-                return (TextView) XposedHelpers.getObjectField(layoutUserCardDialogBinding, "E");
+                View O = (View) XposedHelpers.getObjectField(layoutUserCardDialogBinding, "O");
+                View L = (View) XposedHelpers.getObjectField(layoutUserCardDialogBinding, "L");
+                View u = (View) XposedHelpers.getObjectField(layoutUserCardDialogBinding, "u");
+                O.setVisibility(View.VISIBLE);
+                L.setVisibility(View.VISIBLE);
+                u.setVisibility(View.VISIBLE);
+                return (TextView) L;
             }
         });
     }
@@ -864,5 +808,60 @@ public class PlayingOnLiveBaseModeFragmentHook {
 
     public User getWatchingAnchor() {
         return watchingAnchor;
+    }
+
+    private void LiveMsgContentManagerHook() {
+        XposedHelpers.findAndHookMethod("com.blued.android.module.live_china.liveForMsg.LiveMsgContentManager", AppContainer.getInstance().getClassLoader(), "d", "com.blued.android.module.live_china.model.LiveChattingModel", new XC_MethodHook() {
+            @Override
+            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                super.beforeHookedMethod(param);
+                Object liveChattingModel = param.args[0];
+                short msgType = XposedHelpers.getShortField(liveChattingModel, "msgType");
+//                String msgExtra = (String) XposedHelpers.callMethod(liveChattingModel, "getMsgExtra");
+//                String fromNickName = (String) XposedHelpers.getObjectField(liveChattingModel, "fromNickName");
+//                Log.e("Blued", "msgType = " + msgType + "|fromNickName = " + fromNickName + "|msgExtra = " + msgExtra);
+//                if (msgType == 33 || msgType == 289) {
+//                    LiveChattingModelMsgExtra msgExtraObj = JSON.parseObject(msgExtra, LiveChattingModelMsgExtra.class);
+//                    String giftName = msgExtraObj.getGiftModel().getName();
+//                    String receiverName = msgExtraObj.getGiftModel().getReceiverName();
+//                    int giftCount = msgExtraObj.getGiftModel().getCount();
+//                    String giftIcon = msgExtraObj.getGiftModel().getImagesStatic();
+//                    // 取消之前的隐藏任务
+//                    mHideHandler.removeCallbacks(mHideRunnable);
+//                    // 显示礼物图标
+//                    if (llLiveGiftTipsRef.get() != null) {
+//                        llLiveGiftTipsRef.get().setVisibility(View.VISIBLE);
+//                        TextView tvGiftTips = llLiveGiftTipsRef.get().findViewById(R.id.tv_gift_tips);
+//                        ImageView ivGiftIcon = llLiveGiftTipsRef.get().findViewById(R.id.iv_gift_icon);
+//                        Glide.with(appContextRef.get())
+//                                .load(giftIcon) // 可以是URL、资源ID、文件等
+//                                .placeholder(0) // 加载中显示
+//                                .error(0) // 加载失败显示
+//                                .centerCrop() // 图片裁剪方式
+//                                .into(ivGiftIcon); // 目标ImageView
+//                        String htmlText = "<font color='#4BD9ED'>" + fromNickName + " 送</font>" +
+//                                "<font color='#F8CC53'> " + receiverName + " </font>" +
+//                                "<font color='#4BD9ED'>" + giftName + "</font>" +
+//                                "<font color='#F8CC53'> x " + giftCount + "</font>";
+//                        // 初始状态：在屏幕外（Y = 自身高度，即完全在屏幕下方）
+//                        tvGiftTips.setTranslationY(tvGiftTips.getHeight());
+//                        tvGiftTips.setAlpha(0f); // 初始透明
+//                        tvGiftTips.setText(Html.fromHtml(htmlText, Html.FROM_HTML_MODE_LEGACY));
+//                        // 执行动画：滑入 + 渐显
+//                        tvGiftTips.animate()
+//                                .translationY(0f)  // 回到Y=0（正常位置）
+//                                .alpha(1f)         // 渐显
+//                                .setDuration(600)
+//                                .setInterpolator(new DecelerateInterpolator())
+//                                .start();
+//                    }
+//                    mHideHandler.postDelayed(mHideRunnable, 5000);
+//                }
+                if (msgType == 33) {
+                    Log.w("BluedHook-", "屏蔽礼物弹幕");
+                    param.setResult(null);
+                }
+            }
+        });
     }
 }

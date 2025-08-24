@@ -12,7 +12,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         tools:background="@drawable/bg_zise_tag"
-        android:padding="8dp">
+        android:padding="8dp"
+        tools:ignore="UselessParent">
 
         <TextView
             android:id="@+id/tv_gift_tips"

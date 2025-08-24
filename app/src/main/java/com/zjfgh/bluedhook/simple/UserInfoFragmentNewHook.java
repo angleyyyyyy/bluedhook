@@ -140,7 +140,7 @@ public class UserInfoFragmentNewHook {
                                         }
                                     }
                                 } catch (JSONException e) {
-                                    Log.e("BluedHook：", e.getMessage());
+                                    Log.e("BluedHook-", e.getMessage());
                                 }
                             }
                         });
@@ -153,7 +153,6 @@ public class UserInfoFragmentNewHook {
                         flow_my_vip_tags.addView(tlTitle);
                         //拉黑检测
                         relationship = (String) XposedHelpers.getObjectField(userInfoEntity, "relationship");
-                        Log.w("BluedHook", "relationship" + relationship);
                         if (relationship != null && relationship.equals("8")) {
                             XposedHelpers.setObjectField(userInfoEntity, "relationship", "0");
                             Object userInfoFragmentNew = param.thisObject;
@@ -162,6 +161,9 @@ public class UserInfoFragmentNewHook {
                             ll_in_blackView.setVisibility(View.VISIBLE);
                             tv_be_blockedView.setVisibility(View.VISIBLE);
                             tv_be_blockedView.setText("此用户已将你拉黑");
+                            tv_be_blockedView.setTextColor(Color.RED);
+                            tv_be_blockedView.setBackground(modRes.getDrawable(R.drawable.anchor_fans_open_item_bg, null));
+                            tv_be_blockedView.setPadding(ModuleTools.dpToPx(20), ModuleTools.dpToPx(10), ModuleTools.dpToPx(20), ModuleTools.dpToPx(10));
                         }
                     }
 
