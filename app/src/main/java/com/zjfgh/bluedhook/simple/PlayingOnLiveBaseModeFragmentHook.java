@@ -70,6 +70,7 @@ public class PlayingOnLiveBaseModeFragmentHook {
         startTimer();
         LiveSendMsgSafeIntervalExecutor();
         LiveMsgContentManagerHook();
+        LiveMultiBoyGuestViewHook();
     }
 
     // 获取单例实例
@@ -861,6 +862,29 @@ public class PlayingOnLiveBaseModeFragmentHook {
                     Log.w("BluedHook-", "屏蔽礼物弹幕");
                     param.setResult(null);
                 }
+            }
+        });
+    }
+
+    public void LiveMultiBoyGuestViewHook() {
+        XposedHelpers.findAndHookMethod("com.blued.android.module.live_china.view.multiboy.LiveMultiBoyGuestView", classLoader, "onClick", "android.view.View", new XC_MethodHook() {
+            @Override
+            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                super.beforeHookedMethod(param);
+                View v = (View) param.args[0];
+                int tv_multi_boy_applyId = appContextRef.get().getResources().getIdentifier("tv_multi_boy_apply", "id", appContextRef.get().getPackageName());
+                if (v.getId() == tv_multi_boy_applyId) {
+                    SettingItem settingItem = SQLiteManagement.getInstance().getSettingByFunctionId(SettingsViewCreator.LIVE_JOIN_HIDE_HOOK);
+                    if (settingItem.isSwitchOn()) {
+                        ModuleTools.showBluedToast("申请多人连麦时请关闭直播间隐身，并重新进入直播间。");
+                        param.setResult(null);
+                    }
+                }
+            }
+
+            @Override
+            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                super.afterHookedMethod(param);
             }
         });
     }
