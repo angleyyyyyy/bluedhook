@@ -70,6 +70,10 @@ public class NetworkManager {
         return "https://live.blued.cn/live/user/card?uid=" + uid + "&anchor=0";
     }
 
+    public static String getVisitorsAPI() {
+        return "https://social.irisgw.cn/users/104121534/visitors?conn_type=2";
+    }
+
     public static String getBluedUserBasicAPI(String uid) {
         return "https://social.blued.cn/users/" + uid + "/basic";
     }
