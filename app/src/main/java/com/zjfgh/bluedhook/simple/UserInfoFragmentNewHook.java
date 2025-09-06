@@ -149,6 +149,15 @@ public class UserInfoFragmentNewHook {
                             XposedHelpers.setIntField(userInfoEntity, "privacy_photos_has_locked", 1);
                             tlTitle.addTextView("隐私相册已解除", 9, modRes.getDrawable(R.drawable.bg_green_rounded, null));
                         }
+                        int isChatDeny = XposedHelpers.getIntField(userInfoEntity, "is_chat_deny");
+                        if (isChatDeny == 1) {
+                            XposedHelpers.setIntField(userInfoEntity, "is_chat_deny", 0);
+                        }
+                        int isHomepageDeny = XposedHelpers.getIntField(userInfoEntity, "is_homepage_deny");
+                        if (isHomepageDeny == 1) {
+                            XposedHelpers.setIntField(userInfoEntity, "is_homepage_deny", 0);
+                            tlTitle.addTextView("主页" + "防护已解除", 9, modRes.getDrawable(R.drawable.bg_green_rounded, null));
+                        }
                         tlTitle.addTextView("保存图片去水印", 9, modRes.getDrawable(R.drawable.bg_rounded, null));
                         flow_my_vip_tags.addView(tlTitle);
                         //拉黑检测
