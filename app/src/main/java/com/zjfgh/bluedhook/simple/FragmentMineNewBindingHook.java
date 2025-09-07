@@ -7,23 +7,15 @@ import android.content.res.XModuleResources;
 import android.content.res.XmlResourceParser;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.constraintlayout.helper.widget.Grid;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.bumptech.glide.Glide;
-import com.zjfgh.bluedhook.simple.module.VisitorUser;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -31,21 +23,14 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
-import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedHelpers;
-import okhttp3.Call;
-import okhttp3.Callback;
 import okhttp3.Response;
 
 public class FragmentMineNewBindingHook {
@@ -59,7 +44,6 @@ public class FragmentMineNewBindingHook {
         this.contextRef = new WeakReference<>(context); // 弱引用
         this.modRes = modRes;
         hook();
-        testHook();
     }
 
     public static synchronized FragmentMineNewBindingHook getInstance(Context context, XModuleResources modRes) {
@@ -105,168 +89,6 @@ public class FragmentMineNewBindingHook {
                 ll_live.addView(anchorFansOpenLayout, 1);
                 ll_ygb_give.setOnClickListener(setToastTgbListener());
                 ll_data_analyzer.setOnClickListener(openDataAnalyzerView());
-            }
-        });
-    }
-
-    private void testHook() {
-        XposedHelpers.findAndHookMethod("com.soft.blued.ui.find.fragment.MyVisitorFragmentNew", classLoader, "m", new XC_MethodHook() {
-            @SuppressLint({"ResourceType", "SetTextI18n"})
-            @Override
-            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                super.beforeHookedMethod(param);
-                View n = (View) XposedHelpers.getObjectField(param.thisObject, "n");
-                LinearLayout w = n.findViewById(getSafeContext().getResources().getIdentifier("layout_chart_cover", "id", getSafeContext().getPackageName()));
-                //15天来访趋势文本
-                TextView tv = w.findViewById(getSafeContext().getResources().getIdentifier("tv", "id", getSafeContext().getPackageName()));
-                tv.setText(tv.getText() + "(点击查看已记录的来访)");
-                tv.setOnClickListener(new View.OnClickListener() {
-                    @SuppressLint("UseCompatLoadingForDrawables")
-                    @Override
-                    public void onClick(View v) {
-                        Activity activity = (Activity) v.getContext();
-                        View view = LayoutInflater.from(activity).inflate(modRes.getLayout(R.layout.my_visitor_layout), null, true);
-                        LinearLayout llMyVisitorListView = view.findViewById(R.id.ll_my_visitor_listview);
-                        SuperRecyclerView superRecyclerView = getSuperRecyclerView(v);
-                        llMyVisitorListView.addView(superRecyclerView);
-                        CustomPopupWindow customPopupWindow = new CustomPopupWindow(activity, view, Color.parseColor("#FF0A121F"));
-                        customPopupWindow.setBackgroundDrawable(modRes.getDrawable(R.drawable.bg_tech_space, null));
-                        customPopupWindow.setAnimationStyle(android.R.style.Animation_Dialog);
-                        customPopupWindow.showAtCenter();
-                        // 在 Activity 或 Fragment 中使用
-                        List<VisitorUser> visitorUsers = new ArrayList<>();
-                        NetworkManager.getInstance().getAsync(NetworkManager.getVisitorsAPI(), AuthManager.auHook(false, classLoader, getSafeContext()), new Callback() {
-                            @Override
-                            public void onFailure(@NonNull Call call, @NonNull IOException e) {
-
-                            }
-
-                            @Override
-                            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                                byte[] bytes = AppContainer.getInstance().getBytes();
-                                try {
-                                    JSONObject jsonObject = new JSONObject(response.body().string());
-                                    String enData = jsonObject.getString("en_data");
-                                    enData = ModuleTools.enDataDecrypt(enData, bytes);
-                                    jsonObject = new JSONObject(enData);
-                                    JSONArray data = jsonObject.getJSONArray("data");
-                                    for (int i = 0; i < data.length(); i++) {
-                                        JSONObject userObj = data.getJSONObject(i);
-                                        long uid = userObj.optLong("uid", 0);
-
-                                        if (uid != 0) {
-                                            // 创建VisitorUser对象并设置所有字段
-                                            VisitorUser visitorUser = new VisitorUser();
-                                            // 设置所有字段
-                                            visitorUser.setUid(uid);
-                                            visitorUser.setAge(userObj.optInt("age", 0));
-                                            visitorUser.setAvatar(userObj.optString("avatar", ""));
-                                            visitorUser.setName(userObj.optString("name", ""));
-                                            visitorUser.setHeight(userObj.optInt("height", 0));
-                                            visitorUser.setWeight(userObj.optInt("weight", 0));
-                                            visitorUser.setVbadge(userObj.optInt("vbadge", 0));
-                                            visitorUser.setRole(userObj.optString("role", ""));
-                                            visitorUser.setDistance(userObj.optDouble("distance", 0.0));
-                                            visitorUser.setLatitude(userObj.optDouble("latitude", 0.0));
-                                            visitorUser.setLongitude(userObj.optDouble("longitude", 0.0));
-                                            visitorUser.setLocation(userObj.optInt("location", 0));
-                                            visitorUser.setVipGrade(userObj.optInt("vip_grade", 0));
-                                            visitorUser.setIsShadow(userObj.optInt("is_shadow", 0));
-                                            visitorUser.setIsVipAnnual(userObj.optInt("is_vip_annual", 0));
-                                            visitorUser.setVipExpLvl(userObj.optInt("vip_exp_lvl", 0));
-                                            visitorUser.setIsCall(userObj.optInt("is_call", 0));
-                                            visitorUser.setDescription(userObj.optString("description", ""));
-                                            visitorUser.setOnlineState(userObj.optInt("online_state", 0));
-                                            visitorUser.setVisitorsTime(userObj.optLong("visitors_time", 0L));
-                                            visitorUser.setVisitorsCnt(userObj.optInt("visitors_cnt", 0));
-                                            visitorUser.setIsHideDistance(userObj.optInt("is_hide_distance", 0));
-                                            visitorUser.setIsHideVipLook(userObj.optInt("is_hide_vip_look", 0));
-                                            visitorUser.setIsHideLastOperate(userObj.optInt("is_hide_last_operate", 0));
-                                            visitorUser.setLastOperate(userObj.optLong("last_operate", 0L));
-
-                                            // 添加到数据列表
-                                            visitorUsers.add(visitorUser);
-
-                                            // 打印调试信息
-                                            Log.d("BluedHook", "添加访客: " + visitorUser.getName() + ", UID: " + visitorUser.getUid());
-                                        } else {
-                                            Log.w("BluedHook", "跳过无效用户数据(UID为0): " + userObj.toString());
-                                        }
-                                    }
-                                    v.post(() -> superRecyclerView.setItems(
-                                            visitorUsers,
-                                            (parent, viewType) -> {
-                                                // 直接创建并返回视图
-                                                XmlResourceParser itemMyVisitorRes = modRes.getLayout(R.layout.item_my_visitor);
-                                                return LayoutInflater.from(activity).inflate(itemMyVisitorRes, null);
-                                            },
-                                            (view, user, position) -> {
-                                                view.setBackground(modRes.getDrawable(R.drawable.bg_tech_item, null));
-                                                LinearLayout item_view = view.findViewById(R.id.item_view);
-                                                item_view.setBackground(modRes.getDrawable(R.drawable.bg_tech_item_inner, null));
-                                                LinearLayout user_info = view.findViewById(R.id.user_info);
-                                                user_info.setBackground(modRes.getDrawable(R.drawable.bg_tech_tag, null));
-                                                ImageView ivAvatar = view.findViewById(R.id.iv_avatar);
-                                                Glide.with(getSafeContext())
-                                                        .load(user.getAvatar())
-                                                        .circleCrop()
-                                                        .into(ivAvatar);
-                                                TextView tvUserName = view.findViewById(R.id.tv_username);
-                                                tvUserName.setText(user.getName());
-                                                TextView tvAge = view.findViewById(R.id.tv_age);
-                                                tvAge.setText(String.valueOf(user.getAge()));
-                                                TextView tv_height = view.findViewById(R.id.tv_height);
-                                                tv_height.setText(user.getHeight() + "cm");
-                                                TextView tv_weight = view.findViewById(R.id.tv_weight);
-                                                tv_weight.setText(user.getWeight() + "kg");
-                                                String role = user.getRole();
-                                                if (!role.equals("0") && !role.equals("1")) {
-                                                    role = "其他";
-                                                }
-                                                TextView tv_role = view.findViewById(R.id.tv_role);
-                                                tv_role.setText(role);
-                                                long visitors_time = user.getVisitorsTime() * 1000L;
-                                                Log.w("BluedHook", "visitors_time" + visitors_time);
-                                                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-                                                sdf.setTimeZone(TimeZone.getDefault()); // 设置为系统时区
-                                                String timeStr = sdf.format(new Date(visitors_time));
-                                                TextView tv_time = view.findViewById(R.id.tv_time);
-                                                tv_time.setText("来访时间：" + timeStr);
-                                                String location = user.getDistance() + "km";
-                                                if (user.getIsHideDistance() == 1) {
-                                                    location = "保密";
-                                                }
-                                                TextView tv_distance = view.findViewById(R.id.tv_distance);
-                                                tv_distance.setText(location);
-                                            }
-                                    ));
-
-                                } catch (JSONException e) {
-                                    Log.w("BluedHook", "解析来访数据异常" + e.getMessage());
-                                }
-
-                            }
-                        });
-                    }
-                });
-            }
-
-            @NonNull
-            private SuperRecyclerView getSuperRecyclerView(View v) {
-                SuperRecyclerView superRecyclerView = new SuperRecyclerView(v.getContext());
-                superRecyclerView.setLayoutManager(new LinearLayoutManager(v.getContext()));
-                LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,  // 宽度铺满
-                        LinearLayout.LayoutParams.MATCH_PARENT   // 高度根据内容自适应
-                        // 或者使用 LayoutParams.MATCH_PARENT 如果也需要高度铺满
-                );
-                superRecyclerView.setLayoutParams(layoutParams);
-                return superRecyclerView;
-            }
-
-            @Override
-            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                super.afterHookedMethod(param);
             }
         });
     }
