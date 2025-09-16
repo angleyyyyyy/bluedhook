@@ -117,15 +117,16 @@ public class ChatHook {
                         public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                             try {
                                 JSONObject root = new JSONObject(response.body().string());
-                                String en_data = root.getString("en_data");
-                                JSONObject jsonObject = new JSONObject(ModuleTools.enDataDecrypt(en_data, AppContainer.getInstance().getBytes()));
-                                JSONArray dataArr = jsonObject.getJSONArray("data");
-                                if (dataArr != null) {
-                                    v.post(() -> adapter.updateData(dataArr));
+                                int code = root.getInt("code");
+                                if (code == 200) {
+                                    String dataStr = NetworkManager.en_data(root);
+                                    JSONArray dataArr = new JSONArray(dataStr);
+                                    if (dataArr != null) {
+                                        v.post(() -> adapter.updateData(dataArr));
+                                    }
                                 }
-
                             } catch (JSONException e) {
-                                throw new RuntimeException(e);
+                                Log.e("BluedHook", e.toString());
                             }
                         }
                     });

@@ -179,7 +179,7 @@ public class AnchorFansListAdapter extends RecyclerView.Adapter<AnchorFansListAd
                                 }
                             });
                         } catch (JSONException e) {
-                            throw new RuntimeException(e);
+                            Log.e("BluedHook-", e.toString());
                         }
                     })
                     .setOnCancelListener(() -> {

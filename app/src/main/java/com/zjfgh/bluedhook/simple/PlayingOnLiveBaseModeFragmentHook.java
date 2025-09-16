@@ -541,20 +541,15 @@ public class PlayingOnLiveBaseModeFragmentHook {
                     Log.d("BluedHook", "直播ID为" + lid + "，拉取推荐直播数据");
                     Response response = NetworkManager.getInstance().get(NetworkManager.getUsersRecommendApi(), AuthManager.auHook(false, classLoader, appContextRef.get()));
                     JSONObject root = new JSONObject(response.body().string());
-                    String en_data = root.getString("en_data");
-                    JSONObject jsonObject = new JSONObject(ModuleTools.enDataDecrypt(en_data, AppContainer.getInstance().getBytes()));
-                    try {
-                        int code = jsonObject.getInt("code");
-                        if (code == 200) {
-                            JSONArray data = jsonObject.getJSONArray("data");
-                            long live = data.getJSONObject(0).getLong("live");
-                            String anchorTitle = data.getJSONObject(0).getString("title");
-                            Object liveRoomData = XposedHelpers.callMethod(liveRoomManager, "q");
-                            XposedHelpers.setLongField(liveRoomData, "lid", live);
-                            Log.i("BluedHook", "进入 " + anchorTitle + " 的直播间，LID：" + XposedHelpers.callMethod(liveRoomManager, "d"));
-                        }
-                    } catch (JSONException e) {
-                        throw new RuntimeException(e);
+                    int code = root.getInt("code");
+                    if (code == 200) {
+                        String dataStr = NetworkManager.en_data(root);
+                        JSONArray dataArr = new JSONArray(dataStr);
+                        long live = dataArr.getJSONObject(0).getLong("live");
+                        String anchorTitle = dataArr.getJSONObject(0).getString("title");
+                        Object liveRoomData = XposedHelpers.callMethod(liveRoomManager, "q");
+                        XposedHelpers.setLongField(liveRoomData, "lid", live);
+                        Log.i("BluedHook", "进入 " + anchorTitle + " 的直播间，LID：" + XposedHelpers.callMethod(liveRoomManager, "d"));
                     }
                 }
 
@@ -778,14 +773,12 @@ public class PlayingOnLiveBaseModeFragmentHook {
             Response response = NetworkManager.getInstance().get(NetworkManager.getUsersRecommendApi(), AuthManager.auHook(false, classLoader, appContextRef.get()));
             assert response.body() != null;
             JSONObject root = new JSONObject(response.body().string());
-            String en_data = root.getString("en_data");
-            JSONObject jsonObject = new JSONObject(ModuleTools.enDataDecrypt(en_data, AppContainer.getInstance().getBytes()));
-            int code = jsonObject.getInt("code");
+            int code = root.getInt("code");
             if (code == 200) {
-                Log.e("BluedHook", jsonObject.toString());
-                JSONArray data = jsonObject.getJSONArray("data");
-                now_live = data.getJSONObject(0).getLong("live");
-                String anchorTitle = data.getJSONObject(0).getString("title");
+                String dataStr = NetworkManager.en_data(root);
+                JSONArray dataArr = new JSONArray(dataStr);
+                now_live = dataArr.getJSONObject(0).getLong("live");
+                String anchorTitle = dataArr.getJSONObject(0).getString("title");
                 //调用连接直播间的方法
                 Class<?> LiveRoomHttpUtils = XposedHelpers.findClass("com.blued.android.module.live_china.utils.LiveRoomHttpUtils", classLoader);
                 XposedHelpers.callStaticMethod(LiveRoomHttpUtils, "a", bluedUIHttpResponse, now_live, "", 3, 0);

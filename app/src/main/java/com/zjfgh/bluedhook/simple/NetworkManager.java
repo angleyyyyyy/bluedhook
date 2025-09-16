@@ -1,5 +1,10 @@
 package com.zjfgh.bluedhook.simple;
 
+import android.util.Log;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -209,5 +214,18 @@ public class NetworkManager {
                 requestBuilder.addHeader(header.getKey(), header.getValue());
             }
         }
+    }
+
+    public static String en_data(JSONObject root) throws JSONException {
+        boolean hasEnData = root.has("en_data");
+        Log.w("BluedHook", "hasEnData：" + hasEnData);
+        String dataStr;
+        if (hasEnData) {
+            dataStr = root.getString("en_data");
+            dataStr = ModuleTools.enDataDecrypt(dataStr, AppContainer.getInstance().getBytes());
+        } else {
+            dataStr = root.getString("data");
+        }
+        return dataStr;
     }
 }

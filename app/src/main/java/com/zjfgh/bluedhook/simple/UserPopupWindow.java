@@ -397,7 +397,7 @@ public class UserPopupWindow {
                     });
 
                 } catch (JSONException e) {
-                    throw new RuntimeException(e);
+                    Log.e("BluedHook-", e.toString());
                 }
 
             }
